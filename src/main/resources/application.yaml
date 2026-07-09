@@ -1,6 +1,8 @@
 spring:
   application:
     name: demo
+  config:
+    import: "optional:file:./.env[.properties]"
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -8,3 +10,18 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+
+jira:
+  base-url: ${JIRA_BASE_URL}
+  email: ${JIRA_EMAIL}
+  api-token: ${JIRA_API_TOKEN}
+  jql: ${JIRA_JQL:created >= -30d ORDER BY created DESC}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info,health
+  info:
+    git:
+      mode: full
