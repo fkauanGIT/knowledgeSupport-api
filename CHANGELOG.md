@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.1.0...v0.2.0) (2026-07-10)
+
+
+### Features
+
+* adiciona documentacao interativa da API com springdoc/swagger ([23ad22e](https://github.com/fkauanGIT/knowledgeSupport-api/commit/23ad22ebd98808fa0cccb48d4b5c276bd4a74063))
+
 ## [0.1.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.0.1...v0.1.0) (2026-07-09)
 
 
