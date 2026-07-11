@@ -110,6 +110,6 @@ public class StandardController {
     }
 
     private Standard toDomain(StandardRequest request) {
-        return new Standard(request.standardName(), request.text(), request.result(), request.incidentType());
+        return new Standard(request.standardName(), request.text(), request.result(), request.incidentType(), request.routineNumber());
     }
 }

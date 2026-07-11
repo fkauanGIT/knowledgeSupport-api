@@ -23,9 +23,13 @@ public record StandardResponse(
         String result,
 
         @Schema(description = "Tipo do incidente", example = "ERROR")
-        IncidentType incidentType) {
+        IncidentType incidentType,
 
+        @Schema(description = "Numero da rotina do WINTHOR (Opcional)", example = "1234")
+        Integer routineNumber
+)
+{
     public static StandardResponse from(Standard standard) {
-        return new StandardResponse(standard.getId(), standard.getStandardName(), standard.getText(), standard.getResult(), standard.getIncidentType());
+        return new StandardResponse(standard.getId(), standard.getStandardName(), standard.getText(), standard.getResult(), standard.getIncidentType(), standard.getRoutineNumber());
     }
 }

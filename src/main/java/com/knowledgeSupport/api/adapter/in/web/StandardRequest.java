@@ -18,5 +18,8 @@ public record StandardRequest(
         String result,
 
         @Schema(description = "Tipo do incidente", example = "ERROR")
-        IncidentType incidentType) {
-}
+        IncidentType incidentType,
+
+        @Schema(description = "Numero da rotina do WINTHOR (Opcional)", example = "1234")
+        Integer routineNumber
+) {}
