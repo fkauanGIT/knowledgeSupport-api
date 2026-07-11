@@ -38,10 +38,10 @@ public class StandardController {
     private final DeleteStandardUseCase deleteStandardUseCase;
 
     public StandardController(CreateStandardUseCase createStandardUseCase,
-                               UpdateStandardUseCase updateStandardUseCase,
-                               GetStandardUseCase getStandardUseCase,
-                               ListStandardsUseCase listStandardsUseCase,
-                               DeleteStandardUseCase deleteStandardUseCase) {
+                              UpdateStandardUseCase updateStandardUseCase,
+                              GetStandardUseCase getStandardUseCase,
+                              ListStandardsUseCase listStandardsUseCase,
+                              DeleteStandardUseCase deleteStandardUseCase) {
         this.createStandardUseCase = createStandardUseCase;
         this.updateStandardUseCase = updateStandardUseCase;
         this.getStandardUseCase = getStandardUseCase;

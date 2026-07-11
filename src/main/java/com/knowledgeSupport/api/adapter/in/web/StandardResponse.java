@@ -27,8 +27,7 @@ public record StandardResponse(
 
         @Schema(description = "Numero da rotina do WINTHOR (Opcional)", example = "1234")
         Integer routineNumber
-)
-{
+) {
     public static StandardResponse from(Standard standard) {
         return new StandardResponse(standard.getId(), standard.getStandardName(), standard.getText(), standard.getResult(), standard.getIncidentType(), standard.getRoutineNumber());
     }
