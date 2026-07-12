@@ -10,6 +10,7 @@ public class Called {
     private UUID id;
     private String titleCalled;
     private String descriptionCalled;
+    private Integer routineNumber;
     private String errorName;
     private IncidentType incidentType;
     private FilterCategory filterCategory;
@@ -20,10 +21,12 @@ public class Called {
 
     protected Called() {}
 
-    public Called(UUID id, String titleCalled, String descriptionCalled, String errorName, IncidentType incidentType, FilterCategory filterCategory, Requester requester, Date createdAt, Date deadline, Date updateAt) {
+    public Called(UUID id, String titleCalled, String descriptionCalled, String errorName, IncidentType incidentType,
+                  FilterCategory filterCategory, Requester requester, Date createdAt, Date deadline, Date updateAt, Integer routineNumber) {
         this.id = id;
         this.titleCalled = titleCalled;
         this.descriptionCalled = descriptionCalled;
+        this.routineNumber = routineNumber;
         this.errorName = errorName;
         this.incidentType = incidentType;
         this.filterCategory = filterCategory;
@@ -33,8 +36,8 @@ public class Called {
         this.updateAt = updateAt;
     }
 
-    public Called(String titleCalled, String descriptionCalled, String errorName, IncidentType incidentType, FilterCategory filterCategory, Requester requester, Date createdAt, Date deadline, Date updateAt) {
-        this(null, titleCalled, descriptionCalled, errorName, incidentType, filterCategory, requester, createdAt, deadline, updateAt);
+    public Called(String titleCalled, String descriptionCalled, String errorName, IncidentType incidentType, FilterCategory filterCategory, Requester requester, Date createdAt, Date deadline, Date updateAt, Integer routineNumber) {
+        this(null, titleCalled, descriptionCalled, errorName, incidentType, filterCategory, requester, createdAt, deadline, updateAt, routineNumber);
     }
 
     public UUID getId() {
@@ -113,12 +116,17 @@ public class Called {
         this.updateAt = updateAt;
     }
 
+    public Integer getRoutineNumber() {return routineNumber;}
+
+    public void setRoutineNumber(Integer routineNumber) {this.routineNumber = routineNumber;}
+
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("Called{");
         sb.append("id=").append(id);
         sb.append(", titleCalled='").append(titleCalled).append('\'');
         sb.append(", descriptionCalled='").append(descriptionCalled).append('\'');
+        sb.append(", errorName='").append(errorName).append('\'');
         sb.append(", errorName='").append(errorName).append('\'');
         sb.append(", incidentType=").append(incidentType);
         sb.append(", filterCategory=").append(filterCategory);

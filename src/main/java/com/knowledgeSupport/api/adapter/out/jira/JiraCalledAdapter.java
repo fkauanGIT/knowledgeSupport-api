@@ -37,7 +37,7 @@ public class JiraCalledAdapter implements CalledProviderPort {
                 .uri(uriBuilder -> uriBuilder
                         .path("/rest/api/3/search/jql")
                         .queryParam("jql", jql)
-                        .queryParam("fields", "summary,description,status,reporter,created,duedate,updated")
+                        .queryParam("fields", "summary,description,status,reporter,created,duedate,updated,customfield_10432,customfield_10433")
                         .queryParam("maxResults", 50)
                         .build())
                 .retrieve()
