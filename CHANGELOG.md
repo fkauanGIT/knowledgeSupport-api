@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.2.0...v0.3.0) (2026-07-12)
+
+
+### Features
+
+* adiciona numero de rotina e nome do erro estruturados (Standard e Called) ([b429383](https://github.com/fkauanGIT/knowledgeSupport-api/commit/b4293833f1ade4a8c8ea4ba084c62ea6935a324e))
+* adiciona routineNumber ao standard ([0787f14](https://github.com/fkauanGIT/knowledgeSupport-api/commit/0787f146d31dcf41bebe596f81f112dafd27b6b9))
+* adicionei um novo campo para o número da rotina, para futuramente conseguir fazer os casos de uso ([8a2b16b](https://github.com/fkauanGIT/knowledgeSupport-api/commit/8a2b16b1a9477413ca65f1cd6c2f5a113e99f6c6))
+
 ## [0.2.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.1.0...v0.2.0) (2026-07-10)
 
 
