@@ -33,14 +33,15 @@ public final class JiraCalledMapper {
 
         return new Called(
                 fields.summary(),                       // titleCalled
-                extractText(fields.description()),      // descriptionCalled (texto puro do ADF)
-                fields.summary(),                       // errorName: TODO trocar por campo customizado do Jira
+                extractText(fields.description()),      // descriptionCalled
+                extractText(fields.errorName()),                     // errorName (customfield_10433)
                 IncidentType.ERROR,                     // TODO derivar do tipo/labels da issue
                 FilterCategory.PENDING,                 // TODO derivar do status/projeto
                 requester,
                 parse(fields.created(), JIRA_DATETIME), // createdAt
                 parse(fields.duedate(), JIRA_DATE),     // deadline
-                parse(fields.updated(), JIRA_DATETIME)  // updateAt
+                parse(fields.updated(), JIRA_DATETIME), // updateAt
+                fields.routineNumber() == null ? null : fields.routineNumber().intValue() // routineNumber (customfield_10432)
         );
     }
 

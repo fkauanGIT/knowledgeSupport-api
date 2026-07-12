@@ -160,6 +160,8 @@ Cliente ▶ StandardController (StandardRequest → Standard)
 | Formatos externos ficam nos adapters | JSON do Jira, ADF, entidades JPA: nada disso atravessa uma port. |
 | Config sensível via `.env` | Token do Jira e credenciais de banco nunca vão para o git (`.gitignore`). O Spring lê o arquivo via `spring.config.import`. |
 | JQL configurável (`JIRA_JQL`) | Mudar o filtro de chamados é configuração, não código. |
+| Só chamados WINTHOR entram | Filtro por Request Type na JQL (`.env`) — o escopo do produto é configuração, não código. |
+| Rotina e nome do erro vêm estruturados do Jira | O formulário do JSM tem campos obrigatórios (custom fields `customfield_10432`/`10433`), lidos pelo adapter e mapeados para `Called.routineNumber`/`errorName`. Extração por regex da descrição é fallback, não fonte primária. |
 | Versionamento automático | Conventional Commits + Release Please. Ver [CONTRIBUTING.md](../CONTRIBUTING.md). |
 
 ## Padrões de projeto presentes
@@ -192,6 +194,7 @@ Cliente ▶ StandardController (StandardRequest → Standard)
 
 ## Roadmap de arquitetura
 
+- [x] Campo `routineNumber` no `Standard` e no `Called` — sinal estruturado para o matcher (rotina vem do custom field do Jira).
 - [ ] `AnalyzeCalledUseCase` — cruzar `Called` × `Standard` e sugerir solução (service com duas ports de saída).
 - [ ] Campo `jiraKey` e status no `Called` (necessidade de negócio: referenciar o chamado na origem).
 - [ ] `adapter/in/chatwoot` (webhook) e `adapter/out/chatwoot` (respostas).

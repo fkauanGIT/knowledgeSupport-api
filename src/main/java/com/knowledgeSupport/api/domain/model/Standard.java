@@ -10,19 +10,21 @@ public class Standard {
     private String text;
     private String result;
     private IncidentType incidentType;
+    private Integer routineNumber;
 
     protected Standard() {}
 
-    public Standard(UUID id, String standardName, String text, String result, IncidentType incidentType) {
+    public Standard(UUID id, String standardName, String text, String result, IncidentType incidentType, Integer routineNumber) {
         this.id = id;
         this.standardName = standardName;
         this.text = text;
         this.result = result;
         this.incidentType = incidentType;
+        this.routineNumber = routineNumber;
     }
 
-    public Standard(String standardName, String text, String result, IncidentType incidentType) {
-        this(null, standardName, text, result, incidentType);
+    public Standard(String standardName, String text, String result, IncidentType incidentType, Integer routineNumber) {
+        this(null, standardName, text, result, incidentType,  routineNumber);
     }
 
     public UUID getId() {
@@ -61,6 +63,10 @@ public class Standard {
         this.incidentType = incidentType;
     }
 
+    public Integer getRoutineNumber (){ return routineNumber;}
+
+    public void setRoutineNumber(Integer routineNumber) {this.routineNumber = routineNumber;}
+
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("Standard{");
@@ -69,6 +75,7 @@ public class Standard {
         sb.append(", text='").append(text).append('\'');
         sb.append(", result='").append(result).append('\'');
         sb.append(", incidentType=").append(incidentType);
+        sb.append(", routineNumber=").append(routineNumber);
         sb.append('}');
         return sb.toString();
     }

@@ -27,11 +27,11 @@ public class OpenApiConfig {
                         .title("knowledgeSupport API")
                         .description("""
                                 Base de conhecimento de suporte técnico.
-
+                                
                                 - **Chamados (Calleds)**: puxados ao vivo do Jira (projeto SUP) — somente leitura.
                                 - **Padrões (Standards)**: catálogo de erros conhecidos e suas soluções, persistido em PostgreSQL.
                                 - **Roadmap**: análise automática (chamado × padrão) e integração com Chatwoot.
-
+                                
                                 Arquitetura Hexagonal (Ports & Adapters) — ver documentação de arquitetura no repositório.""")
                         .version(version)
                         .contact(new Contact().name("Francisco Kauan").email("kauan.ti@grupocoagro.com")))

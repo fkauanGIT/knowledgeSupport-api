@@ -18,18 +18,20 @@ public class StandardJpaEntity {
     private String standardName;
     private String text;
     private String result;
+    private Integer routineNumber;
 
     @Enumerated(EnumType.STRING)
     private IncidentType incidentType;
 
     protected StandardJpaEntity() {}
 
-    public StandardJpaEntity(UUID id, String standardName, String text, String result, IncidentType incidentType) {
+    public StandardJpaEntity(UUID id, String standardName, String text, String result, IncidentType incidentType, Integer routineNumber) {
         this.id = id;
         this.standardName = standardName;
         this.text = text;
         this.result = result;
         this.incidentType = incidentType;
+        this.routineNumber = routineNumber;
     }
 
     public UUID getId() {
@@ -67,4 +69,8 @@ public class StandardJpaEntity {
     public void setIncidentType(IncidentType incidentType) {
         this.incidentType = incidentType;
     }
+
+    public Integer getRoutineNumber() { return routineNumber; }
+
+    public void setRoutineNumber(Integer routineNumber) {this.routineNumber = routineNumber; }
 }

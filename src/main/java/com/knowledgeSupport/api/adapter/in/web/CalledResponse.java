@@ -22,6 +22,9 @@ public record CalledResponse(
                 example = "Usuários com perfil de comprador recebem erro ao logar...")
         String descriptionCalled,
 
+        @Schema(description = "Número da rotina")
+        Integer routineCalled,
+
         @Schema(description = "Nome do erro para comparação com os padrões (hoje espelha o título)")
         String errorName,
 
@@ -47,6 +50,7 @@ public record CalledResponse(
         return new CalledResponse(
                 called.getTitleCalled(),
                 called.getDescriptionCalled(),
+                called.getRoutineNumber(),
                 called.getErrorName(),
                 called.getIncidentType(),
                 called.getFilterCategory(),

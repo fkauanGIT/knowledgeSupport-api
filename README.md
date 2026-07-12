@@ -85,6 +85,7 @@ Detalhes, diagramas e o porquê de cada decisão: [docs/ARCHITECTURE.md](docs/AR
 - [x] CRUD de Standards (PostgreSQL)
 - [x] Integração de leitura com o Jira (`Called`)
 - [x] Versionamento automático (Release Please + Actuator)
+- [x] Rotina e nome do erro estruturados (campos customizados do Jira) nos chamados e padrões
 - [ ] `AnalyzeCalledUseCase` — sugerir solução cruzando chamado × padrões
 - [ ] Integração Chatwoot (webhook de entrada + resposta automática)
 - [ ] Interface web de gestão
