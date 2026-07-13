@@ -9,7 +9,7 @@ O **knowledgeSupport** é uma base de conhecimento de suporte técnico. A ideia 
 
 1. Chamados (`Called`) chegam de fora — hoje, puxados da API do **Jira** (projeto SUP).
 2. Padrões de erro (`Standard`) são cadastrados e persistidos no **PostgreSQL** — cada um descreve um erro conhecido e sua solução.
-3. (Roadmap) O sistema **compara** o chamado com os padrões cadastrados e devolve a solução automaticamente. Quanto mais padrões cadastrados, mais o sistema "aprende".
+3. O sistema **compara** o chamado com os padrões cadastrados (rotina + nome do erro) e devolve a solução automaticamente quando encontra um Standard com solução preenchida. Quanto mais padrões cadastrados, mais o sistema "aprende".
 4. (Roadmap) Integração com **Chatwoot** para receber conversas e responder o solicitante.
 
 ## Por que Arquitetura Hexagonal?
@@ -43,18 +43,23 @@ flowchart LR
         subgraph PORT_IN["port/in — o que o núcleo OFERECE"]
             UC_STD["Create/Get/List/Update/Delete<br/>StandardUseCase"]
             UC_CALL["ListCalledsUseCase"]
+            UC_ANALYZE["AnalyzeCalledUseCase"]
         end
         SS["StandardService"]
         CS["CalledService"]
-        DOM["domain: Standard, Called, Requester"]
+        AS["AnalyzeCalledService"]
+        DOM["domain: Standard, Called,<br/>Requester, CalledAnalysis"]
         subgraph PORT_OUT["port/out — o que o núcleo PRECISA"]
             RP["StandardRepositoryPort"]
             CP["CalledProviderPort"]
         end
         UC_STD --> SS
         UC_CALL --> CS
+        UC_ANALYZE --> AS
         SS --> RP
         CS --> CP
+        AS --> RP
+        AS --> CP
     end
 
     subgraph ADAPTER_OUT["adapter/out (traduz p/ fora)"]
@@ -70,6 +75,7 @@ flowchart LR
     HTTP --> SC & CC
     SC --> UC_STD
     CC --> UC_CALL
+    CC --> UC_ANALYZE
     RP -. "implementada por" .-> PA
     CP -. "implementada por" .-> JA
     PA --> PG
@@ -86,9 +92,9 @@ Classes que representam os conceitos do suporte: `Standard` (padrão de erro + s
 
 ### 2. `application` — as regras e os contratos
 
-- **`port/in`** — interfaces com os casos de uso que o sistema **oferece** (`CreateStandardUseCase`, `ListCalledsUseCase`...). Quem chama: adapters de entrada. Quem implementa: services.
+- **`port/in`** — interfaces com os casos de uso que o sistema **oferece** (`CreateStandardUseCase`, `ListCalledsUseCase`, `AnalyzeCalledUseCase`...). Quem chama: adapters de entrada. Quem implementa: services.
 - **`port/out`** — interfaces com o que o sistema **precisa de fora** (`StandardRepositoryPort`, `CalledProviderPort`). Quem chama: services. Quem implementa: adapters de saída.
-- **`service`** — a lógica de verdade (`StandardService`, `CalledService`). Orquestra domínio e ports. Também não conhece tecnologia: nenhum import de web, JPA ou HTTP client.
+- **`service`** — a lógica de verdade (`StandardService`, `CalledService`, `AnalyzeCalledService`). Orquestra domínio e ports. Também não conhece tecnologia: nenhum import de web, JPA ou HTTP client.
 
 ### 3. `adapter` — os tradutores de fronteira
 
@@ -140,6 +146,36 @@ sequenceDiagram
     CS-->>CC: List<Called>
     CC-->>C: JSON List<CalledResponse>
 ```
+
+### GET /api/calleds/{key}/analysis (analisar um chamado)
+
+```mermaid
+sequenceDiagram
+    participant C as Cliente HTTP
+    participant CC as CalledController<br/>(adapter/in)
+    participant UC as AnalyzeCalledUseCase<br/>(port/in)
+    participant AS as AnalyzeCalledService<br/>(application)
+    participant CP as CalledProviderPort<br/>(port/out)
+    participant RP as StandardRepositoryPort<br/>(port/out)
+    participant JA as JiraCalledAdapter<br/>(adapter/out)
+    participant PA as StandardPersistenceAdapter<br/>(adapter/out)
+
+    C->>CC: GET /api/calleds/{key}/analysis
+    CC->>UC: analyze(key)
+    UC->>AS: (implementação)
+    AS->>CP: fetchByKey(key)
+    CP->>JA: (implementação)
+    JA-->>AS: Optional<Called>
+    AS->>RP: findAll()
+    RP->>PA: (implementação)
+    PA-->>AS: List<Standard>
+    AS->>AS: procura Standard com<br/>rotina + errorName + result iguais
+    AS-->>UC: CalledAnalysis (Standard ou null)
+    UC-->>CC: CalledAnalysis
+    CC-->>C: JSON CalledAnalysisResponse
+```
+
+Único fluxo do sistema que depende de **duas** ports de saída ao mesmo tempo — por isso `AnalyzeCalledService` é o único service que recebe `CalledProviderPort` e `StandardRepositoryPort` juntos no construtor.
 
 ### POST /api/standards (cadastrar um padrão)
 
@@ -195,7 +231,9 @@ Cliente ▶ StandardController (StandardRequest → Standard)
 ## Roadmap de arquitetura
 
 - [x] Campo `routineNumber` no `Standard` e no `Called` — sinal estruturado para o matcher (rotina vem do custom field do Jira).
-- [ ] `AnalyzeCalledUseCase` — cruzar `Called` × `Standard` e sugerir solução (service com duas ports de saída).
+- [x] `AnalyzeCalledUseCase` — cruzar `Called` × `Standard` e sugerir solução (service com duas ports de saída: `CalledProviderPort` + `StandardRepositoryPort`).
+- [x] Testes de unidade do núcleo com ports mockadas (Mockito), sem banco, sem Jira, sem rede (`AnalyzeCalledServiceTest`).
 - [ ] Campo `jiraKey` e status no `Called` (necessidade de negócio: referenciar o chamado na origem).
 - [ ] `adapter/in/chatwoot` (webhook) e `adapter/out/chatwoot` (respostas).
-- [ ] Testes de unidade do núcleo com implementações fake das ports (sem banco, sem Jira, sem rede).
+- [ ] Match mais tolerante entre `errorName` e `standardName` (hoje é igualdade exata ignorando caixa/espaços).
+- [ ] Tratar `NoSuchElementException` no `CalledController` como 404 (hoje sobe como 500 genérico).

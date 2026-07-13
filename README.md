@@ -17,7 +17,7 @@
 
 ---
 
-O **knowledgeSupport** integra os chamados do **Jira**, mantém um catálogo de **padrões de erro e soluções** (Standards) e — no roadmap — sugere automaticamente a solução para cada chamado e responde via **Chatwoot**. A cada padrão cadastrado, o sistema "aprende": o mesmo erro nunca precisa ser resolvido duas vezes.
+O **knowledgeSupport** integra os chamados do **Jira**, mantém um catálogo de **padrões de erro e soluções** (Standards) e já cruza automaticamente cada chamado com os padrões cadastrados para sugerir a solução — no roadmap, responde direto via **Chatwoot**. A cada padrão cadastrado, o sistema "aprende": o mesmo erro nunca precisa ser resolvido duas vezes.
 
 Construído em **Java 17 + Spring Boot** com **Arquitetura Hexagonal** (Ports & Adapters).
 
@@ -59,7 +59,7 @@ A documentação da API é **gerada automaticamente** (springdoc/OpenAPI) e serv
 | [`/actuator/info`](http://localhost:8080/actuator/info) | Versão e commit do build |
 | [`/actuator/health`](http://localhost:8080/actuator/health) | Saúde da aplicação |
 
-Em resumo: `/api/standards` (CRUD da base de conhecimento) e `/api/calleds` (chamados ao vivo do Jira, somente leitura). Detalhes de cada rota, campos e exemplos: no Swagger.
+Em resumo: `/api/standards` (CRUD da base de conhecimento), `/api/calleds` (chamados ao vivo do Jira, somente leitura) e `/api/calleds/{key}/analysis` (cruza um chamado com os Standards por rotina + nome do erro e devolve a solução, se encontrar). Detalhes de cada rota, campos e exemplos: no Swagger.
 
 ## 🧭 A arquitetura em 30 segundos
 
@@ -86,6 +86,6 @@ Detalhes, diagramas e o porquê de cada decisão: [docs/ARCHITECTURE.md](docs/AR
 - [x] Integração de leitura com o Jira (`Called`)
 - [x] Versionamento automático (Release Please + Actuator)
 - [x] Rotina e nome do erro estruturados (campos customizados do Jira) nos chamados e padrões
-- [ ] `AnalyzeCalledUseCase` — sugerir solução cruzando chamado × padrões
+- [x] `AnalyzeCalledUseCase` — sugerir solução cruzando chamado × padrões (rotina + nome do erro + solução preenchida)
 - [ ] Integração Chatwoot (webhook de entrada + resposta automática)
 - [ ] Interface web de gestão

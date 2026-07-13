@@ -36,6 +36,7 @@ com.knowledgeSupport.api
 │       ├── Standard.java                 # padrão de erro conhecido + solução
 │       ├── Called.java                   # chamado de suporte (vem do Jira)
 │       ├── Requester.java                # solicitante (vive dentro do Called)
+│       ├── CalledAnalysis.java           # resultado da análise: Called + Standard achado (ou null) + método
 │       └── enums/
 │           ├── IncidentType.java         # ALERT, ERROR
 │           ├── FilterCategory.java       # SUPPORT, INFRASTRUCTURE, DEVELOPMENT, PENDING
@@ -49,13 +50,15 @@ com.knowledgeSupport.api
 │   │   │   ├── ListStandardsUseCase.java
 │   │   │   ├── UpdateStandardUseCase.java
 │   │   │   ├── DeleteStandardUseCase.java
-│   │   │   └── ListCalledsUseCase.java
+│   │   │   ├── ListCalledsUseCase.java
+│   │   │   └── AnalyzeCalledUseCase.java
 │   │   └── out/                          # o que o sistema PRECISA de fora (interfaces)
 │   │       ├── StandardRepositoryPort.java   # "alguém que persista Standards"
-│   │       └── CalledProviderPort.java       # "alguém que forneça Calleds"
+│   │       └── CalledProviderPort.java       # "alguém que forneça (ou busque 1) Called"
 │   └── service/                          # implementação dos use cases
 │       ├── StandardService.java          # CRUD de padrões (usa StandardRepositoryPort)
-│       └── CalledService.java            # chamados (usa CalledProviderPort)
+│       ├── CalledService.java            # chamados (usa CalledProviderPort)
+│       └── AnalyzeCalledService.java     # cruza Called × Standard (usa as duas ports de saída)
 │
 └── adapter/                              # 🔌 FRONTEIRAS — tradutores
     ├── in/                               # quem RECEBE chamadas do mundo
@@ -64,7 +67,8 @@ com.knowledgeSupport.api
     │       ├── StandardRequest.java      # formato do JSON que entra
     │       ├── StandardResponse.java     # formato do JSON que sai
     │       ├── CalledController.java     # /api/calleds (somente GET)
-    │       └── CalledResponse.java
+    │       ├── CalledResponse.java
+    │       └── CalledAnalysisResponse.java   # resposta de GET /api/calleds/{key}/analysis
     └── out/                              # quem o sistema CHAMA
         ├── persistence/                  # canal PostgreSQL (via JPA)
         │   ├── StandardPersistenceAdapter.java  # implements StandardRepositoryPort
