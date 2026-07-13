@@ -17,6 +17,10 @@ jira:
   api-token: ${JIRA_API_TOKEN}
   jql: ${JIRA_JQL:created >= -30d ORDER BY created DESC}
 
+matching:
+  # Score mínimo (0-1) de similaridade de texto para considerar um Standard como sugestão.
+  threshold: ${MATCHING_THRESHOLD:0.4}
+
 management:
   endpoints:
     web:

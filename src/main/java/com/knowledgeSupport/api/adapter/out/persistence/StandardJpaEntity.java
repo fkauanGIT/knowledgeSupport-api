@@ -1,6 +1,7 @@
 package com.knowledgeSupport.api.adapter.out.persistence;
 
 import com.knowledgeSupport.api.domain.model.enums.IncidentType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -16,8 +17,14 @@ public class StandardJpaEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     private String standardName;
+
+    // sem limite de 255: o texto acumula variações de sintoma ao longo do tempo (ver LIMITATIONS.md)
+    @Column(columnDefinition = "text")
     private String text;
+
+    @Column(columnDefinition = "text")
     private String result;
+
     private Integer routineNumber;
 
     @Enumerated(EnumType.STRING)

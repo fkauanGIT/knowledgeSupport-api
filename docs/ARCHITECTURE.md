@@ -169,7 +169,7 @@ sequenceDiagram
     AS->>RP: findAll()
     RP->>PA: (implementação)
     PA-->>AS: List<Standard>
-    AS->>AS: procura Standard com<br/>rotina + errorName + result iguais
+    AS->>AS: match exato (rotina + errorName)<br/>senão score de texto (rotina prioriza)
     AS-->>UC: CalledAnalysis (Standard ou null)
     UC-->>CC: CalledAnalysis
     CC-->>C: JSON CalledAnalysisResponse
@@ -197,6 +197,10 @@ Cliente ▶ StandardController (StandardRequest → Standard)
 | Config sensível via `.env` | Token do Jira e credenciais de banco nunca vão para o git (`.gitignore`). O Spring lê o arquivo via `spring.config.import`. |
 | JQL configurável (`JIRA_JQL`) | Mudar o filtro de chamados é configuração, não código. |
 | Só chamados WINTHOR entram | Filtro por Request Type na JQL (`.env`) — o escopo do produto é configuração, não código. |
+| Matching por *containment score* (não Jaccard simétrico), `routineNumber` vira filtro | Igualdade exata de `errorName` (mantida como primeiro degrau, mais barato e 100% explicável) raramente bate quando o "erro" é uma investigação em linguagem natural. `titleCalled`+`descriptionCalled`+`errorName` agora entram na comparação contra `standardName`+`text`; `routineNumber` deixou de ser par obrigatório e virou um filtro que só prioriza candidatos. O score é **assimétrico de propósito**: `interseção / tokens do chamado`, não `interseção / união` — Jaccard simétrico penalizava Standards ricos (texto longo, acumulando várias variações de sintoma), que é exatamente o comportamento que queremos incentivar com o tempo. Guarda mínima de 3 tokens no chamado evita containment inflado por match de poucas palavras genéricas. Score e threshold (`matching.threshold`) ficam explícitos no domínio (`MatchMethod`) e na config. |
+| Tolerância a typo via Apache Commons Text | Erro de digitação em uma palavra não pode zerar um match que seria óbvio para um humano. Única exceção documentada à regra "sem dependência nova sem justificar" (ver `BACKLOG.md`, item 1.3). |
+| `Standard.text`/`result` sem limite de 255 caracteres (`@Column(columnDefinition = "text")`) | JPA usa `varchar(255)` por padrão quando a coluna não é anotada. Isso trava o próprio fluxo de enriquecimento incentivado acima — um Standard que acumula sintomas precisa de texto longo. Descoberto testando o cadastro manualmente; `ddl-auto: update` não altera coluna existente, foi preciso rodar `ALTER TABLE` uma vez no banco. |
+| `JiraCalledMapper` remove timestamp de log do início do `errorName` | Respostas de rejeição (ex: SEFAZ) vêm do Jira como `"dd/MM/aaaa HH:mm:ss - Resposta da Sefaz: ..."`. O timestamp nunca se repete entre chamados — sobrando no texto, infla o denominador do containment score à toa e nunca deixa o match exato (1.1) funcionar, mesmo pra erros 100% determinísticos. Formato externo, morre no adapter, como o resto. |
 | Rotina e nome do erro vêm estruturados do Jira | O formulário do JSM tem campos obrigatórios (custom fields `customfield_10432`/`10433`), lidos pelo adapter e mapeados para `Called.routineNumber`/`errorName`. Extração por regex da descrição é fallback, não fonte primária. |
 | Versionamento automático | Conventional Commits + Release Please. Ver [CONTRIBUTING.md](../CONTRIBUTING.md). |
 
@@ -235,5 +239,5 @@ Cliente ▶ StandardController (StandardRequest → Standard)
 - [x] Testes de unidade do núcleo com ports mockadas (Mockito), sem banco, sem Jira, sem rede (`AnalyzeCalledServiceTest`).
 - [ ] Campo `jiraKey` e status no `Called` (necessidade de negócio: referenciar o chamado na origem).
 - [ ] `adapter/in/chatwoot` (webhook) e `adapter/out/chatwoot` (respostas).
-- [ ] Match mais tolerante entre `errorName` e `standardName` (hoje é igualdade exata ignorando caixa/espaços).
+- [x] Match mais tolerante entre `errorName`/`standardName` e o texto do chamado — containment score (não Jaccard simétrico, ver tabela de decisões) com stopwords PT e tolerância a typo (Levenshtein), `routineNumber` como filtro em vez de par obrigatório (`TextSimilarity`, `AnalyzeCalledService`, `MatchMethod`).
 - [ ] Tratar `NoSuchElementException` no `CalledController` como 404 (hoje sobe como 500 genérico).

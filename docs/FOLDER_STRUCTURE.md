@@ -10,7 +10,9 @@ knowledgeSupport-api/
 ├── docs/                       # 📚 Você está aqui
 │   ├── ARCHITECTURE.md
 │   ├── CONTRIBUTING.md
-│   └── FOLDER_STRUCTURE.md
+│   ├── FOLDER_STRUCTURE.md
+│   ├── LIMITATIONS.md          # onde a arquitetura bonita NÃO disfarça o problema de domínio
+│   └── BACKLOG.md              # o que falta fazer + prompt pronto pra colar numa IA
 ├── src/main/java/com/knowledgeSupport/api/   # código-fonte (detalhado abaixo)
 ├── src/main/resources/
 │   └── application.yaml        # config do Spring (lê variáveis do .env)
@@ -37,6 +39,7 @@ com.knowledgeSupport.api
 │       ├── Called.java                   # chamado de suporte (vem do Jira)
 │       ├── Requester.java                # solicitante (vive dentro do Called)
 │       ├── CalledAnalysis.java           # resultado da análise: Called + Standard achado (ou null) + método
+│       ├── MatchMethod.java              # como o match foi achado: nome + score (0-1)
 │       └── enums/
 │           ├── IncidentType.java         # ALERT, ERROR
 │           ├── FilterCategory.java       # SUPPORT, INFRASTRUCTURE, DEVELOPMENT, PENDING
@@ -58,7 +61,8 @@ com.knowledgeSupport.api
 │   └── service/                          # implementação dos use cases
 │       ├── StandardService.java          # CRUD de padrões (usa StandardRepositoryPort)
 │       ├── CalledService.java            # chamados (usa CalledProviderPort)
-│       └── AnalyzeCalledService.java     # cruza Called × Standard (usa as duas ports de saída)
+│       ├── AnalyzeCalledService.java     # cruza Called × Standard (usa as duas ports de saída)
+│       └── TextSimilarity.java           # normalize/tokenize/score — Java puro, sem Spring, sem I/O
 │
 └── adapter/                              # 🔌 FRONTEIRAS — tradutores
     ├── in/                               # quem RECEBE chamadas do mundo

@@ -8,6 +8,7 @@ import com.knowledgeSupport.api.domain.model.enums.IncidentType;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 /**
  * Tradutor da fronteira Jira -> domínio.
@@ -19,6 +20,12 @@ public final class JiraCalledMapper {
 
     private static final String JIRA_DATETIME = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     private static final String JIRA_DATE = "yyyy-MM-dd";
+
+    // Respostas de rejeição (ex: SEFAZ) vêm com timestamp de log colado na frente
+    // ("11/07/2026 11:29:52 - Resposta da Sefaz: 866 - ..."). Isso é ruído de integração,
+    // não parte do erro em si — sobrando aí, quebra o match exato porque nunca se repete
+    // igual de um chamado pro outro.
+    private static final Pattern TIMESTAMP_PREFIX = Pattern.compile("(?m)^\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}\\s*-\\s*");
 
     private JiraCalledMapper() {}
 
@@ -34,7 +41,7 @@ public final class JiraCalledMapper {
         return new Called(
                 fields.summary(),                       // titleCalled
                 extractText(fields.description()),      // descriptionCalled
-                extractText(fields.errorName()),                     // errorName (customfield_10433)
+                stripTimestampPrefix(extractText(fields.errorName())), // errorName (customfield_10433)
                 IncidentType.ERROR,                     // TODO derivar do tipo/labels da issue
                 FilterCategory.PENDING,                 // TODO derivar do status/projeto
                 requester,
@@ -43,6 +50,12 @@ public final class JiraCalledMapper {
                 parse(fields.updated(), JIRA_DATETIME), // updateAt
                 fields.routineNumber() == null ? null : fields.routineNumber().intValue() // routineNumber (customfield_10432)
         );
+    }
+
+    static String stripTimestampPrefix(String value) {
+        if (value == null) return null;
+        String semTimestamp = TIMESTAMP_PREFIX.matcher(value).replaceAll("").trim();
+        return semTimestamp.isEmpty() ? null : semTimestamp;
     }
 
     /**
