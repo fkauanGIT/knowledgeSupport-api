@@ -32,9 +32,10 @@ Você vai trabalhar no **knowledgeSupport-api**: API Java 17 + Spring Boot (4.x,
 8. Leia antes de codar: `docs/ARCHITECTURE.md`, `docs/FOLDER_STRUCTURE.md`,
    `docs/LIMITATIONS.md`.
 
-**Estado atual:** CRUD de Standards com `routineNumber` · chamados do Jira com rotina e
-nome do erro estruturados (custom fields) · análise em cascata (match exato →
-containment score+Levenshtein, `routineNumber` como filtro) · Swagger ·
+**Estado atual:** CRUD de Standards com `routineNumber` e taxa de acerto por feedback ·
+chamados do Jira com rotina, nome do erro, jiraKey e status (paginado, retry em 429) ·
+análise em cascata (match exato → containment score+Levenshtein, `routineNumber` como
+filtro) · relatório de lacunas por rotina · 404 tratado centralmente · Swagger ·
 versionamento automático.
 
 ---
@@ -67,16 +68,20 @@ versionamento automático.
 
 ## FASE 2 — Valor visível (produto)
 
-- [ ] **2.1 `jiraKey` (e status) no `Called`** — pré-requisito dos itens abaixo:
+- [x] **2.1 `jiraKey` (e status) no `Called`** — pré-requisito dos itens abaixo:
       referenciar o chamado na origem. Mapear também o status real (statusCategory).
+      **Nota:** mapeado o nome do status (`fields.status().name()`); `statusCategory`
+      (new/indeterminate/done) não foi persistido em campo próprio — não havia uso definido
+      pra ele ainda, adicionar quando surgir necessidade concreta.
 - [ ] **2.2 Comentário automático no Jira** — quando a análise encontra Standard, postar
       comentário no ticket com a solução (port `TicketCommentPort` + escrita no
       JiraAdapter). A feature que faz a equipe VER o sistema trabalhando.
-- [ ] **2.3 Relatório de lacunas** — endpoint agregando análises sem match, agrupadas por
-      rotina e frequência: "cadastre estes padrões e cubra X% do volume". Dirige a
-      alimentação da base.
-- [ ] **2.4 Feedback resolveu/não resolveu** — registrar resultado de cada sugestão →
-      taxa de acerto por Standard (confiança auditável, o que IA não dá).
+- [x] **2.3 Relatório de lacunas** — `GET /api/calleds/gap-report` agrega análises sem
+      match, agrupadas por rotina e frequência: "cadastre estes padrões e cubra X% do
+      volume". Dirige a alimentação da base.
+- [x] **2.4 Feedback resolveu/não resolveu** — `POST /api/calleds/{key}/feedback` +
+      `GET /api/standards/{id}/accuracy` — taxa de acerto por Standard (confiança
+      auditável, o que IA não dá).
 - [ ] **2.5 Chatwoot** — `adapter/in/chatwoot` (webhook de conversa) e
       `adapter/out/chatwoot` (resposta ao solicitante).
 - [ ] **2.6 Interface web de gestão** — front separado consumindo a API (Standards +
@@ -84,20 +89,27 @@ versionamento automático.
 
 ## FASE 3 — Robustez e qualidade
 
-- [ ] **3.1 Erros HTTP corretos** — `@RestControllerAdvice`: chamado/Standard inexistente
-      → 404 com corpo explicativo (hoje `NoSuchElementException` vira 500 na análise).
+- [x] **3.1 Erros HTTP corretos** — `GlobalExceptionHandler` (`@RestControllerAdvice`):
+      chamado/Standard inexistente → 404 com corpo explicativo, centralizado (antes cada
+      controller repetia o mesmo catch).
 - [ ] **3.2 Autenticação** — Spring Security com API key ou básica; proteger Swagger em
       produção. Pré-requisito para deploy fora de rede confiável.
-- [ ] **3.3 Paginação/rate limit no adapter Jira** — usar `nextPageToken`; tratar 429.
-- [ ] **3.4 Testes de unidade do núcleo** — fakes das ports (sem banco/Jira/rede):
-      AnalyzeCalledService (todos os ramos da cascata), mappers (incl. extração ADF),
-      normalização/matching textual.
-- [ ] **3.5 Consistência de nomes** — `routineCalled` → `routineNumber` no
-      `CalledResponse`; revisar campos expostos.
-- [ ] **3.6 Builder para `Called`/`Standard`** — construtores com 10+ parâmetros
+- [x] **3.3 Paginação/rate limit no adapter Jira** — `nextPageToken` em loop (trava de
+      segurança em 20 páginas); 429 com retry + backoff respeitando `Retry-After`,
+      devolve o que já coletou em vez de derrubar a listagem inteira.
+- [x] **3.4 Testes de unidade do núcleo** — fakes das ports (sem banco/Jira/rede):
+      AnalyzeCalledService (todos os ramos da cascata), GapReportService, FeedbackService,
+      StandardService, CalledService, mappers (incl. extração ADF), normalização/matching
+      textual.
+- [x] **3.5 Consistência de nomes** — `routineCalled` → `routineNumber` no
+      `CalledResponse`.
+- [x] **3.6 Builder para `Called`/`Standard`** — construtores com 10+ parâmetros
       posicionais são fonte de bug silencioso (troca de argumentos da mesma natureza).
-- [ ] **3.7 `IncidentType`/`FilterCategory` reais** — hoje hardcoded ERROR/PENDING no
-      JiraCalledMapper; derivar do tipo de issue/status.
+      Setters removidos junto (nada fora da classe os usava).
+- [x] **3.7 `IncidentType`/`FilterCategory` reais** — `IncidentType` deriva do `issuetype`
+      do Jira agora. **`FilterCategory` continua PENDING fixo** — não achamos sinal
+      confiável nos campos disponíveis pra derivar SUPPORT/INFRASTRUCTURE/DEVELOPMENT;
+      precisa de decisão de negócio sobre qual campo do Jira usar (ver `LIMITATIONS.md`).
 - [ ] **3.8 Deploy** — empacotar (Dockerfile), variáveis por ambiente, decidir onde
       hospedar; Swagger/actuator restritos em produção.
 

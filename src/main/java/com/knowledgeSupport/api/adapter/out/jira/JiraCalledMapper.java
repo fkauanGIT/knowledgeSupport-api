@@ -38,18 +38,29 @@ public final class JiraCalledMapper {
                 fields.reporter().emailAddress()
         );
 
-        return new Called(
-                fields.summary(),                       // titleCalled
-                extractText(fields.description()),      // descriptionCalled
-                stripTimestampPrefix(extractText(fields.errorName())), // errorName (customfield_10433)
-                IncidentType.ERROR,                     // TODO derivar do tipo/labels da issue
-                FilterCategory.PENDING,                 // TODO derivar do status/projeto
-                requester,
-                parse(fields.created(), JIRA_DATETIME), // createdAt
-                parse(fields.duedate(), JIRA_DATE),     // deadline
-                parse(fields.updated(), JIRA_DATETIME), // updateAt
-                fields.routineNumber() == null ? null : fields.routineNumber().intValue() // routineNumber (customfield_10432)
-        );
+        return Called.builder()
+                .jiraKey(issue.key())
+                .titleCalled(fields.summary())
+                .descriptionCalled(extractText(fields.description()))
+                .errorName(stripTimestampPrefix(extractText(fields.errorName()))) // customfield_10433
+                .incidentType(incidentTypeFrom(fields.issuetype()))
+                // FilterCategory (SUPPORT/INFRASTRUCTURE/DEVELOPMENT/PENDING) não tem sinal
+                // confiável nos campos que o Jira devolve hoje (status é progresso do fluxo,
+                // não categoria de trabalho). Fica PENDING até existir um campo real pra isso
+                // — ver docs/LIMITATIONS.md.
+                .filterCategory(FilterCategory.PENDING)
+                .status(fields.status() == null ? null : fields.status().name())
+                .requester(requester)
+                .createdAt(parse(fields.created(), JIRA_DATETIME))
+                .deadline(parse(fields.duedate(), JIRA_DATE))
+                .updateAt(parse(fields.updated(), JIRA_DATETIME))
+                .routineNumber(fields.routineNumber() == null ? null : fields.routineNumber().intValue()) // customfield_10432
+                .build();
+    }
+
+    private static IncidentType incidentTypeFrom(JiraIssueType issuetype) {
+        if (issuetype == null || issuetype.name() == null) return IncidentType.ERROR;
+        return issuetype.name().toLowerCase(java.util.Locale.ROOT).contains("alerta") ? IncidentType.ALERT : IncidentType.ERROR;
     }
 
     static String stripTimestampPrefix(String value) {

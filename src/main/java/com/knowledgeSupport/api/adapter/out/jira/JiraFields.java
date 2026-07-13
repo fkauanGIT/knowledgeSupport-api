@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record JiraFields(String summary,
                          JiraDoc description,
                          JiraStatus status,
+                         JiraIssueType issuetype,
                          JiraReporter reporter,
                          String created,
                          String duedate,

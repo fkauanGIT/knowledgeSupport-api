@@ -14,6 +14,10 @@ import java.util.Date;
 @Schema(description = "Chamado de suporte, traduzido do Jira para o formato do domínio")
 public record CalledResponse(
 
+        @Schema(description = "Key do chamado no Jira — use pra montar a URL de /api/calleds/{key}/analysis",
+                example = "SUP-1123")
+        String jiraKey,
+
         @Schema(description = "Título do chamado (summary no Jira)",
                 example = "Permissão de comprador não deixa fazer login no HUB")
         String titleCalled,
@@ -23,7 +27,7 @@ public record CalledResponse(
         String descriptionCalled,
 
         @Schema(description = "Número da rotina")
-        Integer routineCalled,
+        Integer routineNumber,
 
         @Schema(description = "Nome do erro para comparação com os padrões (hoje espelha o título)")
         String errorName,
@@ -33,6 +37,9 @@ public record CalledResponse(
 
         @Schema(description = "Categoria de triagem", example = "PENDING")
         FilterCategory filterCategory,
+
+        @Schema(description = "Status atual no Jira", example = "Aguardando cliente")
+        String status,
 
         @Schema(description = "Nome de quem abriu o chamado (reporter no Jira)", example = "Francisco Kauan")
         String requesterName,
@@ -48,12 +55,14 @@ public record CalledResponse(
 
     public static CalledResponse from(Called called) {
         return new CalledResponse(
+                called.getJiraKey(),
                 called.getTitleCalled(),
                 called.getDescriptionCalled(),
                 called.getRoutineNumber(),
                 called.getErrorName(),
                 called.getIncidentType(),
                 called.getFilterCategory(),
+                called.getStatus(),
                 called.getRequester() == null ? null : called.getRequester().getRequesterName(),
                 called.getCreatedAt(),
                 called.getDeadline(),

@@ -51,18 +51,14 @@ class AnalyzeCalledServiceTest {
     }
 
     private Called calledComTextoLivre(Integer routineNumber, String title, String description, String errorName) {
-        return new Called(
-                title,
-                description,
-                errorName,
-                IncidentType.ERROR,
-                FilterCategory.PENDING,
-                null,
-                null,
-                null,
-                null,
-                routineNumber
-        );
+        return Called.builder()
+                .titleCalled(title)
+                .descriptionCalled(description)
+                .errorName(errorName)
+                .incidentType(IncidentType.ERROR)
+                .filterCategory(FilterCategory.PENDING)
+                .routineNumber(routineNumber)
+                .build();
     }
 
     private Standard standardWith(String standardName, Integer routineNumber, String result) {
@@ -70,7 +66,13 @@ class AnalyzeCalledServiceTest {
     }
 
     private Standard standardComTextoLivre(String standardName, String text, Integer routineNumber, String result) {
-        return new Standard(standardName, text, result, IncidentType.ERROR, routineNumber);
+        return Standard.builder()
+                .standardName(standardName)
+                .text(text)
+                .result(result)
+                .incidentType(IncidentType.ERROR)
+                .routineNumber(routineNumber)
+                .build();
     }
 
     @Test

@@ -7,7 +7,14 @@ public final class StandardMapper {
     private StandardMapper() {}
 
     public static Standard toDomain(StandardJpaEntity entity) {
-        return new Standard(entity.getId(), entity.getStandardName(), entity.getText(), entity.getResult(), entity.getIncidentType(), entity.getRoutineNumber());
+        return Standard.builder()
+                .id(entity.getId())
+                .standardName(entity.getStandardName())
+                .text(entity.getText())
+                .result(entity.getResult())
+                .incidentType(entity.getIncidentType())
+                .routineNumber(entity.getRoutineNumber())
+                .build();
     }
 
     public static StandardJpaEntity toEntity(Standard standard) {

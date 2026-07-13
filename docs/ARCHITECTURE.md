@@ -201,6 +201,10 @@ Cliente ▶ StandardController (StandardRequest → Standard)
 | Tolerância a typo via Apache Commons Text | Erro de digitação em uma palavra não pode zerar um match que seria óbvio para um humano. Única exceção documentada à regra "sem dependência nova sem justificar" (ver `BACKLOG.md`, item 1.3). |
 | `Standard.text`/`result` sem limite de 255 caracteres (`@Column(columnDefinition = "text")`) | JPA usa `varchar(255)` por padrão quando a coluna não é anotada. Isso trava o próprio fluxo de enriquecimento incentivado acima — um Standard que acumula sintomas precisa de texto longo. Descoberto testando o cadastro manualmente; `ddl-auto: update` não altera coluna existente, foi preciso rodar `ALTER TABLE` uma vez no banco. |
 | `JiraCalledMapper` remove timestamp de log do início do `errorName` | Respostas de rejeição (ex: SEFAZ) vêm do Jira como `"dd/MM/aaaa HH:mm:ss - Resposta da Sefaz: ..."`. O timestamp nunca se repete entre chamados — sobrando no texto, infla o denominador do containment score à toa e nunca deixa o match exato (1.1) funcionar, mesmo pra erros 100% determinísticos. Formato externo, morre no adapter, como o resto. |
+| `CalledStandardMatcher` extraído do `AnalyzeCalledService` | `GapReportService` precisa rodar a mesma cascata em lote sobre todos os chamados abertos. Se cada um chamasse `AnalyzeCalledUseCase.analyze(jiraKey)`, seria N+1: re-busca o Called (já em mãos) e re-busca `findAll()` dos Standards a cada iteração. A classe pura recebe `Called` + `List<Standard>` já carregados; quem busca é cada service, uma vez só. |
+| `GlobalExceptionHandler` (`@RestControllerAdvice`) central | `NoSuchElementException` virando 404 era tratado caso a caso (`CalledController` nem tratava, `StandardController` duplicava o mesmo catch em três métodos). Um handler por tipo de exceção do domínio, corpo de erro padronizado (`timestamp/status/error/message`) em toda a API. |
+| Feedback referencia `standardId` por UUID solto, sem `@ManyToOne` JPA | `FeedbackJpaEntity` não precisa carregar o grafo de `Standard` pra existir — mantém a tabela de feedback desacoplada e a query de agregação simples. Consistente com o resto do domínio, que trata relação entre agregados por id, não por referência de objeto persistido. |
+| `Called`/`Standard` com builder, sem setters | Construtor posicional de 10+ parâmetros do mesmo tipo (`String, String, String, ...`) é fonte de bug silencioso — trocar dois argumentos de lugar compila e não dá erro nenhum. Builder nomeia cada campo no call site. Setters removidos porque nada fora da própria classe os usava — checado antes de tirar. |
 | Rotina e nome do erro vêm estruturados do Jira | O formulário do JSM tem campos obrigatórios (custom fields `customfield_10432`/`10433`), lidos pelo adapter e mapeados para `Called.routineNumber`/`errorName`. Extração por regex da descrição é fallback, não fonte primária. |
 | Versionamento automático | Conventional Commits + Release Please. Ver [CONTRIBUTING.md](../CONTRIBUTING.md). |
 
@@ -236,8 +240,13 @@ Cliente ▶ StandardController (StandardRequest → Standard)
 
 - [x] Campo `routineNumber` no `Standard` e no `Called` — sinal estruturado para o matcher (rotina vem do custom field do Jira).
 - [x] `AnalyzeCalledUseCase` — cruzar `Called` × `Standard` e sugerir solução (service com duas ports de saída: `CalledProviderPort` + `StandardRepositoryPort`).
-- [x] Testes de unidade do núcleo com ports mockadas (Mockito), sem banco, sem Jira, sem rede (`AnalyzeCalledServiceTest`).
-- [ ] Campo `jiraKey` e status no `Called` (necessidade de negócio: referenciar o chamado na origem).
-- [ ] `adapter/in/chatwoot` (webhook) e `adapter/out/chatwoot` (respostas).
+- [x] Testes de unidade do núcleo com ports mockadas (Mockito), sem banco, sem Jira, sem rede (`AnalyzeCalledServiceTest` e o resto da suíte de `application/service`).
+- [x] Campo `jiraKey` e status no `Called` — `CalledResponse` agora expõe os dois; `jiraKey` desbloqueia ir de `GET /api/calleds` direto pro `/{key}/analysis`.
+- [ ] `adapter/in/chatwoot` (webhook) e `adapter/out/chatwoot` (respostas) — não feito, sem credenciais configuradas.
 - [x] Match mais tolerante entre `errorName`/`standardName` e o texto do chamado — containment score (não Jaccard simétrico, ver tabela de decisões) com stopwords PT e tolerância a typo (Levenshtein), `routineNumber` como filtro em vez de par obrigatório (`TextSimilarity`, `AnalyzeCalledService`, `MatchMethod`).
-- [ ] Tratar `NoSuchElementException` no `CalledController` como 404 (hoje sobe como 500 genérico).
+- [x] Tratar `NoSuchElementException` como 404 (hoje sobe como 500 genérico) — `GlobalExceptionHandler` (`@RestControllerAdvice`) centraliza isso pra todos os controllers, com corpo explicando o motivo.
+- [x] Paginação (`nextPageToken`) e retry com backoff em 429 no `JiraCalledAdapter`.
+- [x] `GapReportUseCase` (`GET /api/calleds/gap-report`) — agrega os chamados sem match por rotina, pra saber onde cadastrar Standard rende mais cobertura.
+- [x] `SubmitFeedbackUseCase`/`GetStandardAccuracyUseCase` (`POST /api/calleds/{key}/feedback`, `GET /api/standards/{id}/accuracy`) — feedback real de "resolveu ou não" vira taxa de acerto auditável por Standard.
+- [x] `Called`/`Standard` ganharam builder — construtor posicional de 10+ campos era fonte de bug silencioso.
+- [ ] `IncidentType`/`FilterCategory` reais — `IncidentType` já deriva do `issuetype` do Jira; `FilterCategory` continua fixo em `PENDING` (sem sinal confiável pra SUPPORT/INFRASTRUCTURE/DEVELOPMENT, ver `LIMITATIONS.md`).

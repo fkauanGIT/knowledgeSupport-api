@@ -33,7 +33,14 @@ public class StandardService implements CreateStandardUseCase, UpdateStandardUse
         if (!standardRepositoryPort.existsById(id)) {
             throw new NoSuchElementException("Standard not found: " + id);
         }
-        Standard toSave = new Standard(id, standard.getStandardName(), standard.getText(), standard.getResult(), standard.getIncidentType(), standard.getRoutineNumber());
+        Standard toSave = Standard.builder()
+                .id(id)
+                .standardName(standard.getStandardName())
+                .text(standard.getText())
+                .result(standard.getResult())
+                .incidentType(standard.getIncidentType())
+                .routineNumber(standard.getRoutineNumber())
+                .build();
         return standardRepositoryPort.save(toSave);
     }
 

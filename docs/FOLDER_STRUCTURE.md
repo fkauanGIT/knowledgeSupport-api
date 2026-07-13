@@ -35,11 +35,15 @@ com.knowledgeSupport.api
 │
 ├── domain/                               # ⬡ CENTRO — vocabulário do negócio
 │   └── model/
-│       ├── Standard.java                 # padrão de erro conhecido + solução
-│       ├── Called.java                   # chamado de suporte (vem do Jira)
+│       ├── Standard.java                 # padrão de erro conhecido + solução (builder, sem setters)
+│       ├── Called.java                   # chamado de suporte (vem do Jira; builder, sem setters)
 │       ├── Requester.java                # solicitante (vive dentro do Called)
 │       ├── CalledAnalysis.java           # resultado da análise: Called + Standard achado (ou null) + método
 │       ├── MatchMethod.java              # como o match foi achado: nome + score (0-1)
+│       ├── GapReport.java                # relatório agregado: total analisado, total sem match, lacunas por rotina
+│       ├── RoutineGap.java               # quantidade + % das lacunas + exemplos de uma rotina
+│       ├── Feedback.java                 # resolveu ou não resolveu, ligado a um Standard por id
+│       ├── StandardAccuracy.java         # taxa de acerto agregada de um Standard
 │       └── enums/
 │           ├── IncidentType.java         # ALERT, ERROR
 │           ├── FilterCategory.java       # SUPPORT, INFRASTRUCTURE, DEVELOPMENT, PENDING
@@ -54,38 +58,56 @@ com.knowledgeSupport.api
 │   │   │   ├── UpdateStandardUseCase.java
 │   │   │   ├── DeleteStandardUseCase.java
 │   │   │   ├── ListCalledsUseCase.java
-│   │   │   └── AnalyzeCalledUseCase.java
+│   │   │   ├── AnalyzeCalledUseCase.java
+│   │   │   ├── GapReportUseCase.java
+│   │   │   ├── SubmitFeedbackUseCase.java
+│   │   │   └── GetStandardAccuracyUseCase.java
 │   │   └── out/                          # o que o sistema PRECISA de fora (interfaces)
 │   │       ├── StandardRepositoryPort.java   # "alguém que persista Standards"
-│   │       └── CalledProviderPort.java       # "alguém que forneça (ou busque 1) Called"
+│   │       ├── CalledProviderPort.java       # "alguém que forneça (ou busque 1) Called"
+│   │       └── FeedbackRepositoryPort.java   # "alguém que persista Feedback"
 │   └── service/                          # implementação dos use cases
 │       ├── StandardService.java          # CRUD de padrões (usa StandardRepositoryPort)
 │       ├── CalledService.java            # chamados (usa CalledProviderPort)
-│       ├── AnalyzeCalledService.java     # cruza Called × Standard (usa as duas ports de saída)
+│       ├── AnalyzeCalledService.java     # busca Called+Standards e delega pro CalledStandardMatcher
+│       ├── CalledStandardMatcher.java    # a cascata de match em si — Java puro, reusado pelo GapReportService
+│       ├── GapReportService.java         # roda a cascata em lote sobre todos os chamados abertos
+│       ├── FeedbackService.java          # registra feedback + calcula taxa de acerto por Standard
 │       └── TextSimilarity.java           # normalize/tokenize/score — Java puro, sem Spring, sem I/O
 │
 └── adapter/                              # 🔌 FRONTEIRAS — tradutores
     ├── in/                               # quem RECEBE chamadas do mundo
     │   └── web/                          # canal REST
-    │       ├── StandardController.java   # /api/standards (CRUD completo)
+    │       ├── StandardController.java   # /api/standards (CRUD + /accuracy)
     │       ├── StandardRequest.java      # formato do JSON que entra
     │       ├── StandardResponse.java     # formato do JSON que sai
-    │       ├── CalledController.java     # /api/calleds (somente GET)
+    │       ├── StandardAccuracyResponse.java
+    │       ├── CalledController.java     # /api/calleds (GET, /gap-report, /feedback)
     │       ├── CalledResponse.java
-    │       └── CalledAnalysisResponse.java   # resposta de GET /api/calleds/{key}/analysis
+    │       ├── CalledAnalysisResponse.java   # resposta de GET /api/calleds/{key}/analysis
+    │       ├── GapReportResponse.java
+    │       ├── RoutineGapResponse.java
+    │       ├── FeedbackRequest.java
+    │       ├── FeedbackResponse.java
+    │       └── GlobalExceptionHandler.java   # @RestControllerAdvice: NoSuchElementException -> 404
     └── out/                              # quem o sistema CHAMA
         ├── persistence/                  # canal PostgreSQL (via JPA)
         │   ├── StandardPersistenceAdapter.java  # implements StandardRepositoryPort
         │   ├── StandardJpaRepository.java       # interface Spring Data
-        │   ├── StandardJpaEntity.java           # formato da TABELA (@Entity)
-        │   └── StandardMapper.java              # Standard ⇄ StandardJpaEntity
+        │   ├── StandardJpaEntity.java           # formato da TABELA (@Entity, text/result sem limite de 255)
+        │   ├── StandardMapper.java              # Standard ⇄ StandardJpaEntity
+        │   ├── FeedbackPersistenceAdapter.java  # implements FeedbackRepositoryPort
+        │   ├── FeedbackJpaRepository.java
+        │   ├── FeedbackJpaEntity.java
+        │   └── FeedbackMapper.java
         └── jira/                         # canal API do Jira
-            ├── JiraCalledAdapter.java    # implements CalledProviderPort (RestClient)
-            ├── JiraCalledMapper.java     # JSON do Jira → Called (extrai texto do ADF)
+            ├── JiraCalledAdapter.java    # implements CalledProviderPort (RestClient, paginado, retry em 429)
+            ├── JiraCalledMapper.java     # JSON do Jira → Called (extrai texto do ADF, tira timestamp do errorName)
             ├── JiraSearchResponse.java   # ┐
             ├── JiraIssuePayload.java     # │ records espelhando SÓ os campos
             ├── JiraFields.java           # │ que usamos do JSON do Jira
             ├── JiraStatus.java           # │ (@JsonIgnoreProperties ignora o resto)
+            ├── JiraIssueType.java        # │
             ├── JiraReporter.java         # │
             └── JiraDoc.java              # ┘ nó do ADF (texto rico, recursivo)
 ```

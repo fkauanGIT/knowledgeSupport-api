@@ -2,6 +2,7 @@ package com.knowledgeSupport.api.adapter.in.web;
 
 import com.knowledgeSupport.api.application.port.in.CreateStandardUseCase;
 import com.knowledgeSupport.api.application.port.in.DeleteStandardUseCase;
+import com.knowledgeSupport.api.application.port.in.GetStandardAccuracyUseCase;
 import com.knowledgeSupport.api.application.port.in.GetStandardUseCase;
 import com.knowledgeSupport.api.application.port.in.ListStandardsUseCase;
 import com.knowledgeSupport.api.application.port.in.UpdateStandardUseCase;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -36,17 +36,20 @@ public class StandardController {
     private final GetStandardUseCase getStandardUseCase;
     private final ListStandardsUseCase listStandardsUseCase;
     private final DeleteStandardUseCase deleteStandardUseCase;
+    private final GetStandardAccuracyUseCase getStandardAccuracyUseCase;
 
     public StandardController(CreateStandardUseCase createStandardUseCase,
                               UpdateStandardUseCase updateStandardUseCase,
                               GetStandardUseCase getStandardUseCase,
                               ListStandardsUseCase listStandardsUseCase,
-                              DeleteStandardUseCase deleteStandardUseCase) {
+                              DeleteStandardUseCase deleteStandardUseCase,
+                              GetStandardAccuracyUseCase getStandardAccuracyUseCase) {
         this.createStandardUseCase = createStandardUseCase;
         this.updateStandardUseCase = updateStandardUseCase;
         this.getStandardUseCase = getStandardUseCase;
         this.listStandardsUseCase = listStandardsUseCase;
         this.deleteStandardUseCase = deleteStandardUseCase;
+        this.getStandardAccuracyUseCase = getStandardAccuracyUseCase;
     }
 
     @PostMapping
@@ -68,7 +71,7 @@ public class StandardController {
     public StandardResponse getById(@PathVariable UUID id) {
         return getStandardUseCase.getById(id)
                 .map(StandardResponse::from)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Standard not found: " + id));
+                .orElseThrow(() -> new NoSuchElementException("Standard not found: " + id));
     }
 
     @GetMapping
@@ -86,12 +89,8 @@ public class StandardController {
             @ApiResponse(responseCode = "404", description = "Nenhum padrão com esse id")
     })
     public StandardResponse update(@PathVariable UUID id, @RequestBody StandardRequest request) {
-        try {
-            Standard updated = updateStandardUseCase.update(id, toDomain(request));
-            return StandardResponse.from(updated);
-        } catch (NoSuchElementException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
+        Standard updated = updateStandardUseCase.update(id, toDomain(request));
+        return StandardResponse.from(updated);
     }
 
     @DeleteMapping("/{id}")
@@ -102,14 +101,27 @@ public class StandardController {
             @ApiResponse(responseCode = "404", description = "Nenhum padrão com esse id")
     })
     public void delete(@PathVariable UUID id) {
-        try {
-            deleteStandardUseCase.deleteById(id);
-        } catch (NoSuchElementException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
+        deleteStandardUseCase.deleteById(id);
+    }
+
+    @GetMapping("/{id}/accuracy")
+    @Operation(summary = "Taxa de acerto do padrão, baseada em feedback real",
+            description = "Agrega os feedbacks (POST /api/calleds/{key}/feedback) registrados pra esse Standard.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Taxa de acerto"),
+            @ApiResponse(responseCode = "404", description = "Nenhum padrão com esse id")
+    })
+    public StandardAccuracyResponse accuracy(@PathVariable UUID id) {
+        return StandardAccuracyResponse.from(getStandardAccuracyUseCase.getAccuracy(id));
     }
 
     private Standard toDomain(StandardRequest request) {
-        return new Standard(request.standardName(), request.text(), request.result(), request.incidentType(), request.routineNumber());
+        return Standard.builder()
+                .standardName(request.standardName())
+                .text(request.text())
+                .result(request.result())
+                .incidentType(request.incidentType())
+                .routineNumber(request.routineNumber())
+                .build();
     }
 }
