@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.3.0...v0.4.0) (2026-07-13)
+
+
+### Features
+
+* adiciona analise automatica de chamados (rotina + nome do erro) ([2105df2](https://github.com/fkauanGIT/knowledgeSupport-api/commit/2105df2569fc1f409d42d6e472c436099474f746))
+
 ## [0.3.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.2.0...v0.3.0) (2026-07-12)
 
 
