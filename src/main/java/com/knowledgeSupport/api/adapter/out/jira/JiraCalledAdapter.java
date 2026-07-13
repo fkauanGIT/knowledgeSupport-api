@@ -4,9 +4,11 @@ import com.knowledgeSupport.api.application.port.out.CalledProviderPort;
 import com.knowledgeSupport.api.domain.model.Called;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Adapter de saída: implementa CalledProviderPort falando o idioma do Jira.
@@ -50,4 +52,20 @@ public class JiraCalledAdapter implements CalledProviderPort {
                 .map(JiraCalledMapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public Optional<Called> fetchByKey(String key) {
+        try {
+            JiraIssuePayload issue = restClient.get()
+                    .uri("/rest/api/3/issue/{key}?fields=summary," +
+                            "description,status,reporter,created,duedate,updated," +
+                            "customfield_10432,customfield_10433", key)
+                    .retrieve()
+                    .body(JiraIssuePayload.class);
+
+            return Optional.ofNullable(issue).map(JiraCalledMapper::toDomain);
+        } catch (HttpClientErrorException.NotFound e) {
+            return Optional.empty();
+        }
+    };
 }
