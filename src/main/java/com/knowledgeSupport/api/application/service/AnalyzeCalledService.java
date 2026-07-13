@@ -6,6 +6,7 @@ import com.knowledgeSupport.api.application.port.out.StandardRepositoryPort;
 import com.knowledgeSupport.api.domain.model.Called;
 import com.knowledgeSupport.api.domain.model.CalledAnalysis;
 import com.knowledgeSupport.api.domain.model.Standard;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,10 +17,14 @@ public class AnalyzeCalledService implements AnalyzeCalledUseCase {
 
     private final CalledProviderPort calledProviderPort;
     private final StandardRepositoryPort standardRepositoryPort;
+    private final CalledStandardMatcher matcher;
 
-    public AnalyzeCalledService(CalledProviderPort calledProviderPort, StandardRepositoryPort standardRepositoryPort) {
+    public AnalyzeCalledService(CalledProviderPort calledProviderPort,
+                                 StandardRepositoryPort standardRepositoryPort,
+                                 @Value("${matching.threshold:0.4}") double threshold) {
         this.calledProviderPort = calledProviderPort;
         this.standardRepositoryPort = standardRepositoryPort;
+        this.matcher = new CalledStandardMatcher(threshold);
     }
 
     @Override
@@ -29,26 +34,6 @@ public class AnalyzeCalledService implements AnalyzeCalledUseCase {
 
         List<Standard> standards = standardRepositoryPort.findAll();
 
-        for (Standard standard : standards) {
-            if (mesmaRotinaEMesmoErro(called, standard)) {
-                return new CalledAnalysis(called, standard, "ROUTINE_AND_ERROR_NAME");
-            }
-        }
-
-        return new CalledAnalysis(called, null, "NONE");
-    }
-
-    private boolean mesmaRotinaEMesmoErro(Called called, Standard standard) {
-        boolean rotinaBate = called.getRoutineNumber() != null
-                && called.getRoutineNumber().equals(standard.getRoutineNumber());
-
-        boolean erroBate = called.getErrorName() != null
-                && standard.getStandardName() != null
-                && called.getErrorName().trim().equalsIgnoreCase(standard.getStandardName().trim());
-
-        boolean temSolucao = standard.getResult() != null
-                && !standard.getResult().isBlank();
-
-        return rotinaBate && erroBate && temSolucao;
+        return matcher.match(called, standards);
     }
 }

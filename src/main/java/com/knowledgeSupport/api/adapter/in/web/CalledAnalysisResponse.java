@@ -15,15 +15,19 @@ public record CalledAnalysisResponse(
         @Schema(description = "Solução encontrada no Standard correspondente, se houver", nullable = true)
         String solution,
 
-        @Schema(description = "Como a solução foi encontrada", example = "ROUTINE_NUMBER")
-        String method) {
+        @Schema(description = "Como a solução foi encontrada", example = "ROUTINE_AND_TEXT_SCORE")
+        String method,
+
+        @Schema(description = "Confiança do match, de 0 (nenhuma) a 1 (match exato)", example = "0.82")
+        double score) {
 
     public static CalledAnalysisResponse from(CalledAnalysis analysis) {
         return new CalledAnalysisResponse(
                 analysis.getCalled().getTitleCalled(),
                 analysis.getCalled().getRoutineNumber(),
                 analysis.getMatchedStandard() == null ? null : analysis.getMatchedStandard().getResult(),
-                analysis.getMethod()
+                analysis.getMethod().getName(),
+                analysis.getMethod().getScore()
         );
     }
 }

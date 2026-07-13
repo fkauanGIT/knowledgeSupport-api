@@ -3,9 +3,9 @@ package com.knowledgeSupport.api.domain.model;
 public class CalledAnalysis {
     private final Called called;
     private final Standard matchedStandard; // null se não achou
-    private final String method;            // "ROUTINE_NUMBER" ou "NONE"
+    private final MatchMethod method;
 
-    public CalledAnalysis(Called called, Standard matchedStandard, String method) {
+    public CalledAnalysis(Called called, Standard matchedStandard, MatchMethod method) {
         this.called = called;
         this.matchedStandard = matchedStandard;
         this.method = method;
@@ -13,5 +13,5 @@ public class CalledAnalysis {
 
     public Called getCalled() { return called; }
     public Standard getMatchedStandard() { return matchedStandard; }
-    public String getMethod() { return method; }
+    public MatchMethod getMethod() { return method; }
 }

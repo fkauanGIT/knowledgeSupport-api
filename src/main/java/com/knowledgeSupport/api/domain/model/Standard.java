@@ -12,19 +12,10 @@ public class Standard {
     private IncidentType incidentType;
     private Integer routineNumber;
 
-    protected Standard() {}
+    private Standard() {}
 
-    public Standard(UUID id, String standardName, String text, String result, IncidentType incidentType, Integer routineNumber) {
-        this.id = id;
-        this.standardName = standardName;
-        this.text = text;
-        this.result = result;
-        this.incidentType = incidentType;
-        this.routineNumber = routineNumber;
-    }
-
-    public Standard(String standardName, String text, String result, IncidentType incidentType, Integer routineNumber) {
-        this(null, standardName, text, result, incidentType,  routineNumber);
+    public static Builder builder() {
+        return new Builder();
     }
 
     public UUID getId() {
@@ -35,37 +26,21 @@ public class Standard {
         return standardName;
     }
 
-    public void setStandardName(String standardName) {
-        this.standardName = standardName;
-    }
-
     public String getText() {
         return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
     }
 
     public String getResult() {
         return result;
     }
 
-    public void setResult(String result) {
-        this.result = result;
-    }
-
     public IncidentType getIncidentType() {
         return incidentType;
     }
 
-    public void setIncidentType(IncidentType incidentType) {
-        this.incidentType = incidentType;
+    public Integer getRoutineNumber() {
+        return routineNumber;
     }
-
-    public Integer getRoutineNumber (){ return routineNumber;}
-
-    public void setRoutineNumber(Integer routineNumber) {this.routineNumber = routineNumber;}
 
     @Override
     public String toString() {
@@ -78,5 +53,43 @@ public class Standard {
         sb.append(", routineNumber=").append(routineNumber);
         sb.append('}');
         return sb.toString();
+    }
+
+    public static class Builder {
+        private final Standard standard = new Standard();
+
+        public Builder id(UUID id) {
+            standard.id = id;
+            return this;
+        }
+
+        public Builder standardName(String standardName) {
+            standard.standardName = standardName;
+            return this;
+        }
+
+        public Builder text(String text) {
+            standard.text = text;
+            return this;
+        }
+
+        public Builder result(String result) {
+            standard.result = result;
+            return this;
+        }
+
+        public Builder incidentType(IncidentType incidentType) {
+            standard.incidentType = incidentType;
+            return this;
+        }
+
+        public Builder routineNumber(Integer routineNumber) {
+            standard.routineNumber = routineNumber;
+            return this;
+        }
+
+        public Standard build() {
+            return standard;
+        }
     }
 }
