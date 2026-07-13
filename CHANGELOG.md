@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.4.0...v0.5.0) (2026-07-13)
+
+
+### Features
+
+* jiraKey/status, relatorio de lacunas, feedback e robustez de API (fases 2 e 3) ([1df7ce2](https://github.com/fkauanGIT/knowledgeSupport-api/commit/1df7ce26f197d153d4ee6bc36241404d7059e717))
+* matching por containment score com tolerancia a typo (fases 1.1-1.3) ([b6d84e1](https://github.com/fkauanGIT/knowledgeSupport-api/commit/b6d84e1b061a3386ba4132f81884d660f04c81e3))
+* matching por score + lacunas/feedback/robustez (fases 1-3 ([cc8b29b](https://github.com/fkauanGIT/knowledgeSupport-api/commit/cc8b29bdb983d42de7ab60163dd4fd43a79e3280))
+
 ## [0.4.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.3.0...v0.4.0) (2026-07-13)
 
 
