@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.5.0...v0.6.0) (2026-07-14)
+
+
+### Features
+
+* autenticacao por API key (X-API-KEY) ([12b2b8f](https://github.com/fkauanGIT/knowledgeSupport-api/commit/12b2b8f0c7f8d50fb621fb978598a35f99878129))
+* autenticacao por API key (X-API-KEY) ([d2229a9](https://github.com/fkauanGIT/knowledgeSupport-api/commit/d2229a9eda2748d92f635d82bd2e7fe5c723ba5b))
+
 ## [0.5.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.4.0...v0.5.0) (2026-07-13)
 
 
