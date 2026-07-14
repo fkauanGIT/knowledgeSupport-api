@@ -46,6 +46,18 @@ still depends on shared vocabulary between whoever opened the ticket and whoever
 the Standard. Two reports using completely different vocabulary for the same real bug still
 won't find each other.
 
+**Update (confidence level on the analysis response):** the risk this created in practice
+wasn't just "no match" — it was a match that *looks* certain when it isn't. A ticket with
+vague or unrelated text could still clear `matching.threshold` and come back as a plain
+`solution`, indistinguishable in the response from an exact match. `MatchMethod` now carries
+an explicit `Confidence` (`CONFIRMED` for exact match, `LIKELY`/`UNCERTAIN` for score-based
+matches split by `matching.high-confidence-threshold`, `NONE` for no match), exposed in
+`CalledAnalysisResponse.confidence`. **This makes the existing uncertainty visible instead of
+silent — it does not make the matching smarter.** `UNCERTAIN` is still the same containment
+score as before, still word-overlap, still capable of being the wrong Standard; the only
+change is that the analyst now sees an explicit "this is a guess" flag instead of having to
+infer it from a raw float. The semantic gap described above is untouched by this change.
+
 Swapping databases, swapping Jira, adding Chatwoot — none of that fixes this. Hexagonal
 architecture protects the core from infrastructure changes; it doesn't fix a malformed
 business rule. The defect is inside the hexagon, not at the boundary.

@@ -4,6 +4,7 @@ import com.knowledgeSupport.api.domain.model.Called;
 import com.knowledgeSupport.api.domain.model.CalledAnalysis;
 import com.knowledgeSupport.api.domain.model.MatchMethod;
 import com.knowledgeSupport.api.domain.model.Standard;
+import com.knowledgeSupport.api.domain.model.enums.Confidence;
 
 import java.util.Comparator;
 import java.util.List;
@@ -19,9 +20,11 @@ import java.util.Optional;
 public class CalledStandardMatcher {
 
     private final double threshold;
+    private final double highConfidenceThreshold;
 
-    public CalledStandardMatcher(double threshold) {
+    public CalledStandardMatcher(double threshold, double highConfidenceThreshold) {
         this.threshold = threshold;
+        this.highConfidenceThreshold = highConfidenceThreshold;
     }
 
     public CalledAnalysis match(Called called, List<Standard> standards) {
@@ -33,7 +36,7 @@ public class CalledStandardMatcher {
                 .filter(standard -> sameRoutineAndSameError(called, standard))
                 .findFirst();
         if (exactMatch.isPresent()) {
-            return new CalledAnalysis(called, exactMatch.get(), MatchMethod.of("ROUTINE_AND_ERROR_NAME", 1.0));
+            return new CalledAnalysis(called, exactMatch.get(), MatchMethod.of("ROUTINE_AND_ERROR_NAME", 1.0, Confidence.CONFIRMED));
         }
 
         // routineNumber is a filter (reduces candidates), not a mandatory pair: if it narrows
@@ -65,7 +68,11 @@ public class CalledStandardMatcher {
                 })
                 .filter(scored -> scored.score() >= threshold)
                 .max(Comparator.comparingDouble(ScoredStandard::score))
-                .map(scored -> new CalledAnalysis(called, scored.standard(), MatchMethod.of(methodName, scored.score())));
+                .map(scored -> new CalledAnalysis(called, scored.standard(), MatchMethod.of(methodName, scored.score(), confidenceFor(scored.score()))));
+    }
+
+    private Confidence confidenceFor(double score) {
+        return score >= highConfidenceThreshold ? Confidence.LIKELY : Confidence.UNCERTAIN;
     }
 
     private boolean sameRoutine(Called called, Standard standard) {

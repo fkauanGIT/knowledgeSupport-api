@@ -65,6 +65,12 @@ API key authentication · automatic versioning.
 - [ ] **1.6 Remodel `Standard` for an N3 flow** — an investigation trail (steps:
       hypothesis, table/query, verification) instead of a single `result`. A big domain
       change: do it AFTER 1.2 proves it finds the right Standard.
+- [x] **1.7 Explicit confidence level on the analysis response** — `MatchMethod` gains a
+      `Confidence` (`CONFIRMED`/`LIKELY`/`UNCERTAIN`/`NONE`), exposed as
+      `CalledAnalysisResponse.confidence`. `matching.high-confidence-threshold` (default 0.75)
+      splits score-based matches into `LIKELY` vs `UNCERTAIN`; exact match is always
+      `CONFIRMED`. Separates "cleared the minimum threshold" from "safe to trust
+      automatically" — a labeling change, not a scoring change (see `LIMITATIONS.md`).
 
 ## PHASE 2 — Visible value (product)
 

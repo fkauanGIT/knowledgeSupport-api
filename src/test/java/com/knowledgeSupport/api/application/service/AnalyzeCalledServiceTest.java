@@ -5,6 +5,7 @@ import com.knowledgeSupport.api.application.port.out.StandardRepositoryPort;
 import com.knowledgeSupport.api.domain.model.Called;
 import com.knowledgeSupport.api.domain.model.CalledAnalysis;
 import com.knowledgeSupport.api.domain.model.Standard;
+import com.knowledgeSupport.api.domain.model.enums.Confidence;
 import com.knowledgeSupport.api.domain.model.enums.FilterCategory;
 import com.knowledgeSupport.api.domain.model.enums.IncidentType;
 import org.junit.jupiter.api.Test;
@@ -41,9 +42,10 @@ class AnalyzeCalledServiceTest {
 
     private static final String JIRA_KEY = "SUP-1";
     private static final double THRESHOLD = 0.4;
+    private static final double HIGH_CONFIDENCE_THRESHOLD = 0.75;
 
     private AnalyzeCalledService service() {
-        return new AnalyzeCalledService(calledProviderPort, standardRepositoryPort, THRESHOLD);
+        return new AnalyzeCalledService(calledProviderPort, standardRepositoryPort, THRESHOLD, HIGH_CONFIDENCE_THRESHOLD);
     }
 
     private Called calledWith(Integer routineNumber, String errorName) {
@@ -87,6 +89,7 @@ class AnalyzeCalledServiceTest {
 
         assertEquals("ROUTINE_AND_ERROR_NAME", analysis.getMethod().getName());
         assertEquals(1.0, analysis.getMethod().getScore());
+        assertEquals(Confidence.CONFIRMED, analysis.getMethod().getConfidence());
         assertNotNull(analysis.getMatchedStandard());
         assertEquals("Run the manual reprocessing from screen X", analysis.getMatchedStandard().getResult());
     }
@@ -102,6 +105,7 @@ class AnalyzeCalledServiceTest {
         CalledAnalysis analysis = service().analyze(JIRA_KEY);
 
         assertEquals("ROUTINE_AND_ERROR_NAME", analysis.getMethod().getName());
+        assertEquals(Confidence.CONFIRMED, analysis.getMethod().getConfidence());
     }
 
     @Test
@@ -115,6 +119,7 @@ class AnalyzeCalledServiceTest {
         CalledAnalysis analysis = service().analyze(JIRA_KEY);
 
         assertEquals("NONE", analysis.getMethod().getName());
+        assertEquals(Confidence.NONE, analysis.getMethod().getConfidence());
         assertNull(analysis.getMatchedStandard());
     }
 
@@ -129,6 +134,7 @@ class AnalyzeCalledServiceTest {
         CalledAnalysis analysis = service().analyze(JIRA_KEY);
 
         assertEquals("NONE", analysis.getMethod().getName());
+        assertEquals(Confidence.NONE, analysis.getMethod().getConfidence());
         assertNull(analysis.getMatchedStandard());
     }
 
@@ -143,6 +149,7 @@ class AnalyzeCalledServiceTest {
         CalledAnalysis analysis = service().analyze(JIRA_KEY);
 
         assertEquals("NONE", analysis.getMethod().getName());
+        assertEquals(Confidence.NONE, analysis.getMethod().getConfidence());
         assertNull(analysis.getMatchedStandard());
     }
 
@@ -165,6 +172,9 @@ class AnalyzeCalledServiceTest {
 
         assertEquals("ROUTINE_AND_TEXT_SCORE", analysis.getMethod().getName());
         assertTrue(analysis.getMethod().getScore() >= THRESHOLD, "score should clear the threshold: " + analysis.getMethod().getScore());
+        // Containment score here is 6/9 ~= 0.667: clears the minimum threshold but stays below
+        // HIGH_CONFIDENCE_THRESHOLD (0.75) -> UNCERTAIN, not a rubber stamp.
+        assertEquals(Confidence.UNCERTAIN, analysis.getMethod().getConfidence());
         assertNotNull(analysis.getMatchedStandard());
     }
 
@@ -187,6 +197,7 @@ class AnalyzeCalledServiceTest {
 
         assertEquals("TEXT_SCORE", analysis.getMethod().getName());
         assertTrue(analysis.getMethod().getScore() >= THRESHOLD, "score should clear the threshold: " + analysis.getMethod().getScore());
+        assertEquals(Confidence.UNCERTAIN, analysis.getMethod().getConfidence());
         assertNotNull(analysis.getMatchedStandard());
     }
 
@@ -201,7 +212,9 @@ class AnalyzeCalledServiceTest {
         CalledAnalysis analysis = service().analyze(JIRA_KEY);
 
         // The typo makes the exact match (1.1) fail; the score's typo tolerance (1.3) resolves it.
+        // Full containment (3/3 tokens) despite the typo -> LIKELY, not just "cleared the threshold".
         assertEquals("ROUTINE_AND_TEXT_SCORE", analysis.getMethod().getName());
+        assertEquals(Confidence.LIKELY, analysis.getMethod().getConfidence());
         assertNotNull(analysis.getMatchedStandard());
     }
 

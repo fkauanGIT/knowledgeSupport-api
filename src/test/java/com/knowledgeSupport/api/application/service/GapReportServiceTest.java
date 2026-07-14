@@ -30,7 +30,7 @@ class GapReportServiceTest {
     private StandardRepositoryPort standardRepositoryPort;
 
     private GapReportService service() {
-        return new GapReportService(calledProviderPort, standardRepositoryPort, 0.4);
+        return new GapReportService(calledProviderPort, standardRepositoryPort, 0.4, 0.75);
     }
 
     private Called calledFromRoutine(Integer routineNumber, String title) {
