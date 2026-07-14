@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.7.0...v1.0.0) (2026-07-14)
+
+
+### Features
+
+* explicit confidence level on ticket analysis ([e689988](https://github.com/fkauanGIT/knowledgeSupport-api/commit/e6899883d0134dd53f3cf1a36770e19815a4ef5c))
+* investigation trail on Standard (hypothesis/query/verification) ([220e8ac](https://github.com/fkauanGIT/knowledgeSupport-api/commit/220e8acfa9d5848e8c181574c14cdde38a063c9c))
+
+
+### Bug Fixes
+
+* default FilterCategory to SUPPORT instead of PENDING ([3d5b9aa](https://github.com/fkauanGIT/knowledgeSupport-api/commit/3d5b9aabd9fc34a2c6e4e706405132a1aaa1a278))
+
+
+### Miscellaneous Chores
+
+* mark project as 1.0.0 ([#14](https://github.com/fkauanGIT/knowledgeSupport-api/issues/14)) ([05aa1f4](https://github.com/fkauanGIT/knowledgeSupport-api/commit/05aa1f4f517d10bcfd27cbef9809595055850edf))
+
 ## [0.7.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.6.0...v0.7.0) (2026-07-14)
 
 
