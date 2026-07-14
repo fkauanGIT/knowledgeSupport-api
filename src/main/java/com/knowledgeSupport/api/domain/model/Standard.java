@@ -2,6 +2,7 @@ package com.knowledgeSupport.api.domain.model;
 
 import com.knowledgeSupport.api.domain.model.enums.IncidentType;
 
+import java.util.List;
 import java.util.UUID;
 
 public class Standard {
@@ -11,6 +12,7 @@ public class Standard {
     private String result;
     private IncidentType incidentType;
     private Integer routineNumber;
+    private List<InvestigationStep> investigationSteps = List.of();
 
     private Standard() {}
 
@@ -42,6 +44,10 @@ public class Standard {
         return routineNumber;
     }
 
+    public List<InvestigationStep> getInvestigationSteps() {
+        return investigationSteps;
+    }
+
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("Standard{");
@@ -51,6 +57,7 @@ public class Standard {
         sb.append(", result='").append(result).append('\'');
         sb.append(", incidentType=").append(incidentType);
         sb.append(", routineNumber=").append(routineNumber);
+        sb.append(", investigationSteps=").append(investigationSteps);
         sb.append('}');
         return sb.toString();
     }
@@ -85,6 +92,11 @@ public class Standard {
 
         public Builder routineNumber(Integer routineNumber) {
             standard.routineNumber = routineNumber;
+            return this;
+        }
+
+        public Builder investigationSteps(List<InvestigationStep> investigationSteps) {
+            standard.investigationSteps = investigationSteps == null ? List.of() : investigationSteps;
             return this;
         }
 

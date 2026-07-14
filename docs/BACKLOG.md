@@ -62,9 +62,12 @@ API key authentication · automatic versioning.
 - [ ] **1.5 (future, optional) Semantic layer** — a semantic matching port
       (embeddings/AI) as ONE MORE step in the cascade, never replacing the
       deterministic ones. AI = "nice-sounding answers"/last resort, not a dependency.
-- [ ] **1.6 Remodel `Standard` for an N3 flow** — an investigation trail (steps:
-      hypothesis, table/query, verification) instead of a single `result`. A big domain
-      change: do it AFTER 1.2 proves it finds the right Standard.
+- [x] **1.6 Remodel `Standard` for an N3 flow** — `investigationSteps` (list of
+      `InvestigationStep`: hypothesis, query, verification, confirmed) added alongside the
+      existing `result`. Documentation/reasoning trail only: matching still scores
+      `standardName`+`text` and gates on `result`, unaffected by steps being present, empty,
+      or absent — no gating on `confirmed`, no peer review added (still one analyst
+      authoring today, by choice — see `LIMITATIONS.md`).
 - [x] **1.7 Explicit confidence level on the analysis response** — `MatchMethod` gains a
       `Confidence` (`CONFIRMED`/`LIKELY`/`UNCERTAIN`/`NONE`), exposed as
       `CalledAnalysisResponse.confidence`. `matching.high-confidence-threshold` (default 0.75)

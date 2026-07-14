@@ -27,7 +27,7 @@ Built with **Java 17 + Spring Boot** using **Hexagonal Architecture** (Ports & A
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The project's hexagonal architecture: layers, ports, adapters, diagrams, flows and decisions |
 | [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md) | Annotated map of the folders + "where to put what" + naming conventions |
-| [docs/CONTRIBUTING.md](CONTRIBUTING.md) | Commit convention and automatic versioning (Release Please) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Commit convention and automatic versioning (Release Please) |
 | [CHANGELOG.md](CHANGELOG.md) | Version history (auto-generated) |
 
 ## 🚀 How to run

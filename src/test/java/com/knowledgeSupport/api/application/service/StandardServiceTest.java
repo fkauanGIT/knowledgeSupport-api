@@ -1,6 +1,7 @@
 package com.knowledgeSupport.api.application.service;
 
 import com.knowledgeSupport.api.application.port.out.StandardRepositoryPort;
+import com.knowledgeSupport.api.domain.model.InvestigationStep;
 import com.knowledgeSupport.api.domain.model.Standard;
 import com.knowledgeSupport.api.domain.model.enums.IncidentType;
 import org.junit.jupiter.api.Test;
@@ -31,8 +32,10 @@ class StandardServiceTest {
     }
 
     private Standard standard(UUID id) {
+        InvestigationStep step = InvestigationStep.builder()
+                .hypothesis("suspected cause").query("SELECT 1").verification("confirmed").confirmed(true).build();
         return Standard.builder().id(id).standardName("test").text("text").result("solution")
-                .incidentType(IncidentType.ERROR).routineNumber(100).build();
+                .incidentType(IncidentType.ERROR).routineNumber(100).investigationSteps(List.of(step)).build();
     }
 
     @Test
@@ -63,6 +66,8 @@ class StandardServiceTest {
         Standard updated = service().update(id, standard(null));
 
         assertEquals(id, updated.getId());
+        assertEquals(1, updated.getInvestigationSteps().size());
+        assertEquals("suspected cause", updated.getInvestigationSteps().get(0).getHypothesis());
     }
 
     @Test

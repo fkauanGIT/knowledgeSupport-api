@@ -4,6 +4,7 @@ import com.knowledgeSupport.api.domain.model.Standard;
 import com.knowledgeSupport.api.domain.model.enums.IncidentType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.List;
 import java.util.UUID;
 
 @Schema(description = "Error pattern registered in the knowledge base")
@@ -26,9 +27,15 @@ public record StandardResponse(
         IncidentType incidentType,
 
         @Schema(description = "WINTHOR routine number (optional)", example = "1234")
-        Integer routineNumber
+        Integer routineNumber,
+
+        @Schema(description = "Investigation trail behind the solution: hypotheses tested, " +
+                "in order, with the query used and what confirmed/discarded each one")
+        List<InvestigationStepResponse> investigationSteps
 ) {
     public static StandardResponse from(Standard standard) {
-        return new StandardResponse(standard.getId(), standard.getStandardName(), standard.getText(), standard.getResult(), standard.getIncidentType(), standard.getRoutineNumber());
+        return new StandardResponse(standard.getId(), standard.getStandardName(), standard.getText(), standard.getResult(),
+                standard.getIncidentType(), standard.getRoutineNumber(),
+                standard.getInvestigationSteps().stream().map(InvestigationStepResponse::from).toList());
     }
 }

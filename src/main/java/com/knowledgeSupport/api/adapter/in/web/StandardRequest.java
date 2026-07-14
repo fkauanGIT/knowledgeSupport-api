@@ -3,6 +3,8 @@ package com.knowledgeSupport.api.adapter.in.web;
 import com.knowledgeSupport.api.domain.model.enums.IncidentType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.List;
+
 @Schema(description = "Data to register or update an error pattern")
 public record StandardRequest(
 
@@ -21,6 +23,11 @@ public record StandardRequest(
         IncidentType incidentType,
 
         @Schema(description = "WINTHOR routine number (optional)", example = "1234")
-        Integer routineNumber
+        Integer routineNumber,
+
+        @Schema(description = "Investigation trail behind the solution: hypotheses tested, " +
+                "in order, with the query used and what confirmed/discarded each one. Optional.",
+                nullable = true)
+        List<InvestigationStepRequest> investigationSteps
 ) {
 }
