@@ -31,22 +31,22 @@ class StandardServiceTest {
     }
 
     private Standard standard(UUID id) {
-        return Standard.builder().id(id).standardName("teste").text("texto").result("solucao")
+        return Standard.builder().id(id).standardName("test").text("text").result("solution")
                 .incidentType(IncidentType.ERROR).routineNumber(100).build();
     }
 
     @Test
-    void create_delegaParaORepository() {
+    void create_delegatesToTheRepository() {
         Standard standard = standard(null);
         when(standardRepositoryPort.save(standard)).thenReturn(standard(UUID.randomUUID()));
 
         Standard created = service().create(standard);
 
-        assertEquals("teste", created.getStandardName());
+        assertEquals("test", created.getStandardName());
     }
 
     @Test
-    void update_lancaExcecaoQuandoNaoExiste() {
+    void update_throwsExceptionWhenItDoesNotExist() {
         UUID id = UUID.randomUUID();
         when(standardRepositoryPort.existsById(id)).thenReturn(false);
 
@@ -55,7 +55,7 @@ class StandardServiceTest {
     }
 
     @Test
-    void update_salvaComOIdDoPathQuandoExiste() {
+    void update_savesWithThePathIdWhenItExists() {
         UUID id = UUID.randomUUID();
         when(standardRepositoryPort.existsById(id)).thenReturn(true);
         when(standardRepositoryPort.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -66,7 +66,7 @@ class StandardServiceTest {
     }
 
     @Test
-    void deleteById_lancaExcecaoQuandoNaoExiste() {
+    void deleteById_throwsExceptionWhenItDoesNotExist() {
         UUID id = UUID.randomUUID();
         when(standardRepositoryPort.existsById(id)).thenReturn(false);
 
@@ -75,7 +75,7 @@ class StandardServiceTest {
     }
 
     @Test
-    void getById_devolveVazioQuandoNaoExiste() {
+    void getById_returnsEmptyWhenItDoesNotExist() {
         UUID id = UUID.randomUUID();
         when(standardRepositoryPort.findById(id)).thenReturn(Optional.empty());
 
@@ -83,7 +83,7 @@ class StandardServiceTest {
     }
 
     @Test
-    void listAll_delegaParaORepository() {
+    void listAll_delegatesToTheRepository() {
         when(standardRepositoryPort.findAll()).thenReturn(List.of(standard(UUID.randomUUID())));
 
         assertEquals(1, service().listAll().size());

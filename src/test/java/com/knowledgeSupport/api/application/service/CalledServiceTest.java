@@ -19,8 +19,8 @@ class CalledServiceTest {
     private CalledProviderPort calledProviderPort;
 
     @Test
-    void listOpenCalleds_delegaParaOProviderPort() {
-        Called called = Called.builder().titleCalled("teste").build();
+    void listOpenCalleds_delegatesToTheProviderPort() {
+        Called called = Called.builder().titleCalled("test").build();
         when(calledProviderPort.fetchOpenCalleds()).thenReturn(List.of(called));
 
         CalledService service = new CalledService(calledProviderPort);

@@ -10,45 +10,45 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Cobre a extração de texto da árvore ADF e a limpeza de timestamp do errorName —
- * são as duas fronteiras onde o formato bruto do Jira "morre" antes de virar Called.
+ * Covers extracting text from the ADF tree and stripping the timestamp from errorName —
+ * the two boundaries where Jira's raw format "dies" before becoming a Called.
  */
 class JiraCalledMapperTest {
 
     @Test
-    void extractText_concatenaTextoDeParagrafosAninhados() {
-        JiraDoc texto = new JiraDoc("text", "Ausencia de troco", null);
-        JiraDoc paragrafo = new JiraDoc("paragraph", null, List.of(texto));
-        JiraDoc doc = new JiraDoc("doc", null, List.of(paragrafo));
+    void extractText_concatenatesTextFromNestedParagraphs() {
+        JiraDoc text = new JiraDoc("text", "Ausencia de troco", null);
+        JiraDoc paragraph = new JiraDoc("paragraph", null, List.of(text));
+        JiraDoc doc = new JiraDoc("doc", null, List.of(paragraph));
 
         assertEquals("Ausencia de troco", JiraCalledMapper.extractText(doc));
     }
 
     @Test
-    void extractText_comNoNulo_retornaNull() {
+    void extractText_withNullNode_returnsNull() {
         assertNull(JiraCalledMapper.extractText(null));
     }
 
     @Test
-    void stripTimestampPrefix_removeDataHoraDeRespostaDeRejeicao() {
-        String bruto = "11/07/2026 11:29:52 - Resposta da Sefaz: 866 - Rejeicao: Ausencia de troco";
+    void stripTimestampPrefix_removesDateTimeFromRejectionResponse() {
+        String raw = "11/07/2026 11:29:52 - Resposta da Sefaz: 866 - Rejeicao: Ausencia de troco";
 
         assertEquals("Resposta da Sefaz: 866 - Rejeicao: Ausencia de troco",
-                JiraCalledMapper.stripTimestampPrefix(bruto));
+                JiraCalledMapper.stripTimestampPrefix(raw));
     }
 
     @Test
-    void stripTimestampPrefix_semTimestamp_mantemTextoIntacto() {
+    void stripTimestampPrefix_withNoTimestamp_keepsTextIntact() {
         assertEquals("Erro generico do sistema", JiraCalledMapper.stripTimestampPrefix("Erro generico do sistema"));
     }
 
     @Test
-    void stripTimestampPrefix_comStringNula_retornaNull() {
+    void stripTimestampPrefix_withNullString_returnsNull() {
         assertNull(JiraCalledMapper.stripTimestampPrefix(null));
     }
 
     @Test
-    void toDomain_mapeiaCamposEstruturadosEDerivaIncidentTypeErro() {
+    void toDomain_mapsStructuredFieldsAndDerivesErrorIncidentType() {
         JiraIssuePayload issue = new JiraIssuePayload("SUP-1115", new JiraFields(
                 "Nota fiscal pendente",
                 new JiraDoc("doc", null, List.of(new JiraDoc("paragraph", null, List.of(new JiraDoc("text", "descricao aqui", null))))),
@@ -75,7 +75,7 @@ class JiraCalledMapperTest {
     }
 
     @Test
-    void toDomain_semReporterNemErrorName_naoQuebra() {
+    void toDomain_withNoReporterNorErrorName_doesNotBreak() {
         JiraIssuePayload issue = new JiraIssuePayload("SUP-2", new JiraFields(
                 "titulo", null, null, null, null, null, null, null, null, null
         ));

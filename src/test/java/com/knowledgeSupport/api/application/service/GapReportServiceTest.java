@@ -17,8 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
- * Sem nenhum Standard cadastrado, todo chamado vira lacuna — isso deixa o teste
- * determinístico sem precisar prever score de texto, só a agregação por rotina.
+ * With no Standard registered, every ticket becomes a gap — that keeps the test
+ * deterministic without needing to predict a text score, only the grouping by routine.
  */
 @ExtendWith(MockitoExtension.class)
 class GapReportServiceTest {
@@ -33,59 +33,59 @@ class GapReportServiceTest {
         return new GapReportService(calledProviderPort, standardRepositoryPort, 0.4);
     }
 
-    private Called calledDaRotina(Integer routineNumber, String titulo) {
+    private Called calledFromRoutine(Integer routineNumber, String title) {
         return Called.builder()
-                .titleCalled(titulo)
+                .titleCalled(title)
                 .routineNumber(routineNumber)
                 .build();
     }
 
     @Test
-    void agrupaPorRotinaEOrdenaPorQuantidadeDesc() {
+    void groupsByRoutineAndSortsByCountDesc() {
         when(calledProviderPort.fetchOpenCalleds()).thenReturn(List.of(
-                calledDaRotina(100, "chamado 1"),
-                calledDaRotina(100, "chamado 2"),
-                calledDaRotina(200, "chamado 3"),
-                calledDaRotina(null, "chamado 4")
+                calledFromRoutine(100, "ticket 1"),
+                calledFromRoutine(100, "ticket 2"),
+                calledFromRoutine(200, "ticket 3"),
+                calledFromRoutine(null, "ticket 4")
         ));
         when(standardRepositoryPort.findAll()).thenReturn(List.of());
 
         GapReport report = service().generate();
 
-        assertEquals(4, report.getTotalChamadosAnalisados());
-        assertEquals(4, report.getTotalSemMatch());
-        assertEquals(3, report.getLacunasPorRotina().size());
+        assertEquals(4, report.getTotalCalledsAnalyzed());
+        assertEquals(4, report.getTotalWithoutMatch());
+        assertEquals(3, report.getGapsByRoutine().size());
 
-        RoutineGap primeira = report.getLacunasPorRotina().get(0);
-        assertEquals(100, primeira.getRoutineNumber());
-        assertEquals(2, primeira.getQuantidade());
-        assertEquals(50.0, primeira.getPercentualDasLacunas());
-        assertTrue(primeira.getExemplos().contains("chamado 1"));
+        RoutineGap first = report.getGapsByRoutine().get(0);
+        assertEquals(100, first.getRoutineNumber());
+        assertEquals(2, first.getCount());
+        assertEquals(50.0, first.getPercentageOfGaps());
+        assertTrue(first.getExamples().contains("ticket 1"));
     }
 
     @Test
-    void semChamadosAbertos_devolveRelatorioVazio() {
+    void noOpenTickets_returnsEmptyReport() {
         when(calledProviderPort.fetchOpenCalleds()).thenReturn(List.of());
 
         GapReport report = service().generate();
 
-        assertEquals(0, report.getTotalChamadosAnalisados());
-        assertEquals(0, report.getTotalSemMatch());
-        assertTrue(report.getLacunasPorRotina().isEmpty());
+        assertEquals(0, report.getTotalCalledsAnalyzed());
+        assertEquals(0, report.getTotalWithoutMatch());
+        assertTrue(report.getGapsByRoutine().isEmpty());
     }
 
     @Test
-    void chamadoComMatchExatoNaoEntraNoRelatorio() {
+    void ticketWithExactMatch_isNotIncludedInTheReport() {
         Called called = Called.builder()
-                .titleCalled("teste")
-                .errorName("Rotina 100 travando")
+                .titleCalled("test")
+                .errorName("Routine 100 stuck")
                 .routineNumber(100)
                 .build();
 
         com.knowledgeSupport.api.domain.model.Standard standard = com.knowledgeSupport.api.domain.model.Standard.builder()
-                .standardName("Rotina 100 travando")
+                .standardName("Routine 100 stuck")
                 .routineNumber(100)
-                .result("Solução")
+                .result("Solution")
                 .build();
 
         when(calledProviderPort.fetchOpenCalleds()).thenReturn(List.of(called));
@@ -93,8 +93,8 @@ class GapReportServiceTest {
 
         GapReport report = service().generate();
 
-        assertEquals(1, report.getTotalChamadosAnalisados());
-        assertEquals(0, report.getTotalSemMatch());
-        assertTrue(report.getLacunasPorRotina().isEmpty());
+        assertEquals(1, report.getTotalCalledsAnalyzed());
+        assertEquals(0, report.getTotalWithoutMatch());
+        assertTrue(report.getGapsByRoutine().isEmpty());
     }
 }

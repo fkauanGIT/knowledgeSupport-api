@@ -33,7 +33,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void submit_lancaExcecaoQuandoStandardNaoExiste() {
+    void submit_throwsExceptionWhenStandardDoesNotExist() {
         UUID standardId = UUID.randomUUID();
         when(standardRepositoryPort.existsById(standardId)).thenReturn(false);
 
@@ -41,7 +41,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void submit_salvaFeedbackQuandoStandardExiste() {
+    void submit_savesFeedbackWhenStandardExists() {
         UUID standardId = UUID.randomUUID();
         when(standardRepositoryPort.existsById(standardId)).thenReturn(true);
         when(feedbackRepositoryPort.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -57,7 +57,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void accuracy_calculaTaxaDeAcertoComBaseNosFeedbacks() {
+    void accuracy_computesAccuracyRateFromFeedbacks() {
         UUID standardId = UUID.randomUUID();
         when(standardRepositoryPort.existsById(standardId)).thenReturn(true);
         when(feedbackRepositoryPort.findByStandardId(standardId)).thenReturn(List.of(
@@ -74,7 +74,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void accuracy_semFeedback_devolveZeroSemQuebrar() {
+    void accuracy_withNoFeedback_returnsZeroWithoutBreaking() {
         UUID standardId = UUID.randomUUID();
         when(standardRepositoryPort.existsById(standardId)).thenReturn(true);
         when(feedbackRepositoryPort.findByStandardId(standardId)).thenReturn(List.of());
@@ -86,7 +86,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void accuracy_lancaExcecaoQuandoStandardNaoExiste() {
+    void accuracy_throwsExceptionWhenStandardDoesNotExist() {
         UUID standardId = UUID.randomUUID();
         when(standardRepositoryPort.existsById(standardId)).thenReturn(false);
 

@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 
 class ApiKeyAuthFilterTest {
 
-    private final ApiKeyAuthFilter filter = new ApiKeyAuthFilter("chave-correta");
+    private final ApiKeyAuthFilter filter = new ApiKeyAuthFilter("correct-key");
 
     @AfterEach
     void clearContext() {
@@ -22,11 +22,11 @@ class ApiKeyAuthFilterTest {
     }
 
     @Test
-    void deveAutenticarQuandoApiKeyBate() throws Exception {
+    void authenticatesWhenApiKeyMatches() throws Exception {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
-        when(request.getHeader("X-API-KEY")).thenReturn("chave-correta");
+        when(request.getHeader("X-API-KEY")).thenReturn("correct-key");
 
         filter.doFilter(request, response, chain);
 
@@ -35,11 +35,11 @@ class ApiKeyAuthFilterTest {
     }
 
     @Test
-    void naoDeveAutenticarQuandoApiKeyDivergeOuFalta() throws Exception {
+    void doesNotAuthenticateWhenApiKeyMismatchesOrMissing() throws Exception {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
-        when(request.getHeader("X-API-KEY")).thenReturn("chave-errada");
+        when(request.getHeader("X-API-KEY")).thenReturn("wrong-key");
 
         filter.doFilter(request, response, chain);
 

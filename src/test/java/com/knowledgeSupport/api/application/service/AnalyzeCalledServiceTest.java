@@ -24,11 +24,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
- * Cobre a cascata do AnalyzeCalledService.analyze(): 1) match exato (rotina + errorName
- * normalizado), 2) score de similaridade de texto priorizando candidatos da mesma rotina,
- * 3) score de texto sem exigir rotina, 4) NONE quando nada passa do threshold configurado
- * (0.4 nos testes, mesmo valor default do application.yaml).
- * As portas (Jira e banco) são mockadas: não é preciso Jira real nem banco real.
+ * Covers the AnalyzeCalledService.analyze() cascade: 1) exact match (routine + normalized
+ * errorName), 2) text similarity score prioritizing candidates from the same routine,
+ * 3) text score without requiring a routine, 4) NONE when nothing clears the configured
+ * threshold (0.4 in the tests, same as application.yaml's default).
+ * The ports (Jira and database) are mocked: no real Jira or real database needed.
  */
 @ExtendWith(MockitoExtension.class)
 class AnalyzeCalledServiceTest {
@@ -47,10 +47,10 @@ class AnalyzeCalledServiceTest {
     }
 
     private Called calledWith(Integer routineNumber, String errorName) {
-        return calledComTextoLivre(routineNumber, "teste", "descricao", errorName);
+        return calledWithFreeText(routineNumber, "test", "description", errorName);
     }
 
-    private Called calledComTextoLivre(Integer routineNumber, String title, String description, String errorName) {
+    private Called calledWithFreeText(Integer routineNumber, String title, String description, String errorName) {
         return Called.builder()
                 .titleCalled(title)
                 .descriptionCalled(description)
@@ -62,10 +62,10 @@ class AnalyzeCalledServiceTest {
     }
 
     private Standard standardWith(String standardName, Integer routineNumber, String result) {
-        return standardComTextoLivre(standardName, "texto do padrao", routineNumber, result);
+        return standardWithFreeText(standardName, "standard text", routineNumber, result);
     }
 
-    private Standard standardComTextoLivre(String standardName, String text, Integer routineNumber, String result) {
+    private Standard standardWithFreeText(String standardName, String text, Integer routineNumber, String result) {
         return Standard.builder()
                 .standardName(standardName)
                 .text(text)
@@ -76,9 +76,9 @@ class AnalyzeCalledServiceTest {
     }
 
     @Test
-    void deveEncontrarPorMatchExato_QuandoRotinaEErroBatemEHaResult() {
-        Called called = calledWith(1301, "Rotina 1301 travando");
-        Standard standard = standardWith("Rotina 1301 travando", 1301, "Rodar o reprocessamento manual pela tela X");
+    void findsByExactMatch_whenRoutineAndErrorMatchAndThereIsAResult() {
+        Called called = calledWith(1301, "Routine 1301 stuck");
+        Standard standard = standardWith("Routine 1301 stuck", 1301, "Run the manual reprocessing from screen X");
 
         when(calledProviderPort.fetchByKey(JIRA_KEY)).thenReturn(Optional.of(called));
         when(standardRepositoryPort.findAll()).thenReturn(List.of(standard));
@@ -88,11 +88,11 @@ class AnalyzeCalledServiceTest {
         assertEquals("ROUTINE_AND_ERROR_NAME", analysis.getMethod().getName());
         assertEquals(1.0, analysis.getMethod().getScore());
         assertNotNull(analysis.getMatchedStandard());
-        assertEquals("Rodar o reprocessamento manual pela tela X", analysis.getMatchedStandard().getResult());
+        assertEquals("Run the manual reprocessing from screen X", analysis.getMatchedStandard().getResult());
     }
 
     @Test
-    void deveIgnorarCaixaAcentoEEspacosNoMatchExato() {
+    void ignoresCaseAccentsAndSpacesInExactMatch() {
         Called called = calledWith(1301, "  caixa NÃO fecha  ");
         Standard standard = standardWith("Caixa nao Fecha", 1301, "Solução X");
 
@@ -105,9 +105,9 @@ class AnalyzeCalledServiceTest {
     }
 
     @Test
-    void deveRetornarNoneQuandoRotinaEErroBatemMasStandardNaoTemSolucao() {
-        Called called = calledWith(1301, "Rotina 1301 travando");
-        Standard standard = standardWith("Rotina 1301 travando", 1301, null);
+    void returnsNoneWhenRoutineAndErrorMatchButStandardHasNoSolution() {
+        Called called = calledWith(1301, "Routine 1301 stuck");
+        Standard standard = standardWith("Routine 1301 stuck", 1301, null);
 
         when(calledProviderPort.fetchByKey(JIRA_KEY)).thenReturn(Optional.of(called));
         when(standardRepositoryPort.findAll()).thenReturn(List.of(standard));
@@ -119,9 +119,9 @@ class AnalyzeCalledServiceTest {
     }
 
     @Test
-    void deveRetornarNoneQuandoRotinaEErroBatemMasResultEBranco() {
-        Called called = calledWith(1301, "Rotina 1301 travando");
-        Standard standard = standardWith("Rotina 1301 travando", 1301, "   ");
+    void returnsNoneWhenRoutineAndErrorMatchButResultIsBlank() {
+        Called called = calledWith(1301, "Routine 1301 stuck");
+        Standard standard = standardWith("Routine 1301 stuck", 1301, "   ");
 
         when(calledProviderPort.fetchByKey(JIRA_KEY)).thenReturn(Optional.of(called));
         when(standardRepositoryPort.findAll()).thenReturn(List.of(standard));
@@ -133,9 +133,9 @@ class AnalyzeCalledServiceTest {
     }
 
     @Test
-    void deveRetornarNoneQuandoRotinaBateMasTextoNaoTemNadaEmComum() {
-        Called called = calledWith(1301, "Erro diferente do cadastrado");
-        Standard standard = standardWith("Rotina 1301 travando", 1301, "Solução X");
+    void returnsNoneWhenRoutineMatchesButTextHasNothingInCommon() {
+        Called called = calledWith(1301, "Different error than the registered one");
+        Standard standard = standardWith("Routine 1301 stuck", 1301, "Solução X");
 
         when(calledProviderPort.fetchByKey(JIRA_KEY)).thenReturn(Optional.of(called));
         when(standardRepositoryPort.findAll()).thenReturn(List.of(standard));
@@ -147,12 +147,12 @@ class AnalyzeCalledServiceTest {
     }
 
     @Test
-    void deveEncontrarPorScoreDeTexto_QuandoRotinaBateMasErrorNameNaoBateExatamente() {
-        Called called = calledComTextoLivre(1301,
+    void findsByTextScore_whenRoutineMatchesButErrorNameDoesNotMatchExactly() {
+        Called called = calledWithFreeText(1301,
                 "Caixa trava no encerramento",
                 "operador nao consegue encerrar caixa",
                 "Bloqueio generico");
-        Standard standard = standardComTextoLivre(
+        Standard standard = standardWithFreeText(
                 "Bloqueio ao encerrar caixa",
                 "operador nao consegue encerrar caixa apos movimento",
                 1301,
@@ -164,17 +164,17 @@ class AnalyzeCalledServiceTest {
         CalledAnalysis analysis = service().analyze(JIRA_KEY);
 
         assertEquals("ROUTINE_AND_TEXT_SCORE", analysis.getMethod().getName());
-        assertTrue(analysis.getMethod().getScore() >= THRESHOLD, "score deveria passar do threshold: " + analysis.getMethod().getScore());
+        assertTrue(analysis.getMethod().getScore() >= THRESHOLD, "score should clear the threshold: " + analysis.getMethod().getScore());
         assertNotNull(analysis.getMatchedStandard());
     }
 
     @Test
-    void deveEncontrarPorScoreDeTexto_MesmoQuandoRotinaNaoBate() {
-        Called called = calledComTextoLivre(9999,
+    void findsByTextScore_evenWhenRoutineDoesNotMatch() {
+        Called called = calledWithFreeText(9999,
                 "Caixa trava no encerramento",
                 "operador nao consegue encerrar caixa",
                 "Bloqueio generico");
-        Standard standard = standardComTextoLivre(
+        Standard standard = standardWithFreeText(
                 "Bloqueio ao encerrar caixa",
                 "operador nao consegue encerrar caixa apos movimento",
                 1301,
@@ -186,27 +186,27 @@ class AnalyzeCalledServiceTest {
         CalledAnalysis analysis = service().analyze(JIRA_KEY);
 
         assertEquals("TEXT_SCORE", analysis.getMethod().getName());
-        assertTrue(analysis.getMethod().getScore() >= THRESHOLD, "score deveria passar do threshold: " + analysis.getMethod().getScore());
+        assertTrue(analysis.getMethod().getScore() >= THRESHOLD, "score should clear the threshold: " + analysis.getMethod().getScore());
         assertNotNull(analysis.getMatchedStandard());
     }
 
     @Test
-    void deveEncontrarPorScore_MesmoComTypoNoErrorName() {
-        Called called = calledComTextoLivre(1301, null, null, "Fechamentoo duplicado novamente");
-        Standard standard = standardComTextoLivre("Fechamento duplicado", "ocorre novamente as vezes", 1301, "Cancelar o duplicado");
+    void findsByScore_evenWithATypoInErrorName() {
+        Called called = calledWithFreeText(1301, null, null, "Fechamentoo duplicado novamente");
+        Standard standard = standardWithFreeText("Fechamento duplicado", "ocorre novamente as vezes", 1301, "Cancelar o duplicado");
 
         when(calledProviderPort.fetchByKey(JIRA_KEY)).thenReturn(Optional.of(called));
         when(standardRepositoryPort.findAll()).thenReturn(List.of(standard));
 
         CalledAnalysis analysis = service().analyze(JIRA_KEY);
 
-        // O typo faz o match exato (1.1) falhar; quem resolve é a tolerância a typo do score (1.3).
+        // The typo makes the exact match (1.1) fail; the score's typo tolerance (1.3) resolves it.
         assertEquals("ROUTINE_AND_TEXT_SCORE", analysis.getMethod().getName());
         assertNotNull(analysis.getMatchedStandard());
     }
 
     @Test
-    void deveLancarExcecaoQuandoChamadoNaoExisteNoJira() {
+    void throwsExceptionWhenTicketDoesNotExistInJira() {
         when(calledProviderPort.fetchByKey(JIRA_KEY)).thenReturn(Optional.empty());
 
         assertThrows(NoSuchElementException.class, () -> service().analyze(JIRA_KEY));
