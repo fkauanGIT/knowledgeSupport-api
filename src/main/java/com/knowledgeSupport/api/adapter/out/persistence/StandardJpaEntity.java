@@ -1,14 +1,21 @@
 package com.knowledgeSupport.api.adapter.out.persistence;
 
 import com.knowledgeSupport.api.domain.model.enums.IncidentType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -30,15 +37,24 @@ public class StandardJpaEntity {
     @Enumerated(EnumType.STRING)
     private IncidentType incidentType;
 
+    // No separate JPA entity/repository: a step has no identity or lifecycle outside its
+    // Standard, same precedent as Requester living inside Called (see ARCHITECTURE.md).
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "standard_investigation_step", joinColumns = @JoinColumn(name = "standard_id"))
+    @OrderColumn(name = "step_order")
+    private List<InvestigationStepEmbeddable> investigationSteps = new ArrayList<>();
+
     protected StandardJpaEntity() {}
 
-    public StandardJpaEntity(UUID id, String standardName, String text, String result, IncidentType incidentType, Integer routineNumber) {
+    public StandardJpaEntity(UUID id, String standardName, String text, String result, IncidentType incidentType,
+                              Integer routineNumber, List<InvestigationStepEmbeddable> investigationSteps) {
         this.id = id;
         this.standardName = standardName;
         this.text = text;
         this.result = result;
         this.incidentType = incidentType;
         this.routineNumber = routineNumber;
+        this.investigationSteps = investigationSteps == null ? new ArrayList<>() : new ArrayList<>(investigationSteps);
     }
 
     public UUID getId() {
@@ -80,4 +96,12 @@ public class StandardJpaEntity {
     public Integer getRoutineNumber() { return routineNumber; }
 
     public void setRoutineNumber(Integer routineNumber) {this.routineNumber = routineNumber; }
+
+    public List<InvestigationStepEmbeddable> getInvestigationSteps() {
+        return investigationSteps;
+    }
+
+    public void setInvestigationSteps(List<InvestigationStepEmbeddable> investigationSteps) {
+        this.investigationSteps = investigationSteps == null ? new ArrayList<>() : new ArrayList<>(investigationSteps);
+    }
 }

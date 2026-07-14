@@ -36,6 +36,7 @@ com.knowledgeSupport.api
 ├── domain/                               # ⬡ CENTER — business vocabulary
 │   └── model/
 │       ├── Standard.java                 # known error pattern + solution (builder, no setters)
+│       ├── InvestigationStep.java        # one step of a Standard's reasoning trail (hypothesis/query/verification/confirmed)
 │       ├── Called.java                   # support ticket (comes from Jira; builder, no setters)
 │       ├── Requester.java                # requester (lives inside Called)
 │       ├── CalledAnalysis.java           # analysis result: Called + Standard found (or null) + method
@@ -81,6 +82,8 @@ com.knowledgeSupport.api
     │       ├── StandardController.java   # /api/standards (CRUD + /accuracy)
     │       ├── StandardRequest.java      # incoming JSON format
     │       ├── StandardResponse.java     # outgoing JSON format
+    │       ├── InvestigationStepRequest.java   # one step of the investigation trail (incoming)
+    │       ├── InvestigationStepResponse.java  # one step of the investigation trail (outgoing)
     │       ├── StandardAccuracyResponse.java
     │       ├── CalledController.java     # /api/calleds (GET, /gap-report, /feedback)
     │       ├── CalledResponse.java
@@ -98,6 +101,7 @@ com.knowledgeSupport.api
         │   ├── StandardPersistenceAdapter.java  # implements StandardRepositoryPort
         │   ├── StandardJpaRepository.java       # Spring Data interface
         │   ├── StandardJpaEntity.java           # TABLE format (@Entity, text/result with no 255 limit)
+        │   ├── InvestigationStepEmbeddable.java # @Embeddable, held as an @ElementCollection on StandardJpaEntity
         │   ├── StandardMapper.java              # Standard ⇄ StandardJpaEntity
         │   ├── FeedbackPersistenceAdapter.java  # implements FeedbackRepositoryPort
         │   ├── FeedbackJpaRepository.java

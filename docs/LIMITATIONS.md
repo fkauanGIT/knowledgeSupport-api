@@ -36,8 +36,12 @@ real-world N3 scenario:
   that only turns out to be connected to a tax-configuration problem after investigation) —
   not even embeddings would solve that, because the root-cause keyword simply doesn't exist
   in either side's text until someone figures it out and registers it.
-- `Standard.result` is still a single "final answer" field, not an investigation trail
-  (item 1.6, also not implemented).
+- `Standard.result` is still the single "final answer" applied by the matcher — but a
+  `Standard` can now also carry `investigationSteps` (item 1.6, done), recording the
+  hypotheses tested, the query used to check each one, and what confirmed or discarded it.
+  This is a **documentation trail, not a smarter matcher**: `CalledStandardMatcher` still
+  only scores `standardName`+`text` and still gates on `result` being present — a Standard
+  with zero steps behaves exactly as before, on purpose (see below).
 - The Standards knowledge base is still scanned entirely in memory (`findAll()`); Postgres
   full-text search (item 1.4) only comes in once the volume justifies it.
 
@@ -70,12 +74,20 @@ This is a business-rule redesign inside the core, not a new adapter:
    fuzzy matching via containment score + Levenshtein, see the section above. Still missing
    the semantic step (embeddings) for distant paraphrasing — and even that step wouldn't fix
    a root cause that was never written down in the original ticket (see the example above).
-2. Model `Standard` as a sequence of investigation steps (tables, fields,
-   queries, discarded hypotheses), not a single `result` field. Not done yet — depends
-   on item 1 being validated in real use (backlog item 1.6).
+2. ~~Model `Standard` as a sequence of investigation steps (tables, fields, queries,
+   discarded hypotheses), not a single `result` field.~~ **Done** — `investigationSteps` on
+   `Standard` (`InvestigationStep`: hypothesis/query/verification/confirmed), see
+   `ARCHITECTURE.md`. Deliberately incomplete on two fronts, by choice: (a) matching doesn't
+   read or gate on the steps at all — it's context for a human, not a new score dimension;
+   (b) there's still no peer review of what gets registered — today only one person
+   authors and consults the knowledge base, so a review workflow would be solving a problem
+   that doesn't exist yet. Revisit both once there's real usage data (steps recorded on
+   existing Standards) or a second analyst in the loop.
 3. A semantic layer (embeddings) as the last step of the cascade, never replacing the
    deterministic methods above (backlog item 1.5, optional/future).
 
-With item 1 done, the system already handles light paraphrasing and typos — but it still
-serves semi-deterministic errors better than root-cause N3 diagnosis with fully free
-vocabulary. Items 2 and 3 are what's missing for that to really change.
+With items 1 and 2 done, the system handles light paraphrasing and typos, and a registered
+solution now carries the reasoning behind it instead of a bare answer — but it still serves
+semi-deterministic errors better than root-cause N3 diagnosis with fully free vocabulary.
+Item 3 (and, longer-term, peer review once more than one analyst is involved) is what's
+still missing for that to really change.

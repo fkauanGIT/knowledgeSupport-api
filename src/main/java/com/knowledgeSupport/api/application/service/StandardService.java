@@ -40,6 +40,7 @@ public class StandardService implements CreateStandardUseCase, UpdateStandardUse
                 .result(standard.getResult())
                 .incidentType(standard.getIncidentType())
                 .routineNumber(standard.getRoutineNumber())
+                .investigationSteps(standard.getInvestigationSteps())
                 .build();
         return standardRepositoryPort.save(toSave);
     }

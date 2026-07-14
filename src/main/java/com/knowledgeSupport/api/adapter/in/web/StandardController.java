@@ -6,6 +6,7 @@ import com.knowledgeSupport.api.application.port.in.GetStandardAccuracyUseCase;
 import com.knowledgeSupport.api.application.port.in.GetStandardUseCase;
 import com.knowledgeSupport.api.application.port.in.ListStandardsUseCase;
 import com.knowledgeSupport.api.application.port.in.UpdateStandardUseCase;
+import com.knowledgeSupport.api.domain.model.InvestigationStep;
 import com.knowledgeSupport.api.domain.model.Standard;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -122,6 +123,19 @@ public class StandardController {
                 .result(request.result())
                 .incidentType(request.incidentType())
                 .routineNumber(request.routineNumber())
+                .investigationSteps(toInvestigationSteps(request.investigationSteps()))
                 .build();
+    }
+
+    private List<InvestigationStep> toInvestigationSteps(List<InvestigationStepRequest> steps) {
+        if (steps == null) return List.of();
+        return steps.stream()
+                .map(step -> InvestigationStep.builder()
+                        .hypothesis(step.hypothesis())
+                        .query(step.query())
+                        .verification(step.verification())
+                        .confirmed(step.confirmed())
+                        .build())
+                .toList();
     }
 }
