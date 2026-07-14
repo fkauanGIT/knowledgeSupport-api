@@ -1,91 +1,91 @@
 <div align="center">
-<img src="docs/assets/logo.svg" width="160" height="160" alt="Logo knowledgeSupport"/>
+<img src="docs/assets/logo.svg" width="160" height="160" alt="knowledgeSupport logo"/>
 
 # knowledgeSupport API
 
-### Base de conhecimento inteligente para suporte técnico
+### Smart knowledge base for technical support
 
-**Chamados do Jira + padrões de solução = respostas cada vez mais automáticas**
+**Jira tickets + solution standards = increasingly automatic answers**
 
 [![Release](https://img.shields.io/github/v/release/fkauanGIT/knowledgeSupport-api?label=release&color=4F46E5)](https://github.com/fkauanGIT/knowledgeSupport-api/releases)
 [![Java](https://img.shields.io/badge/Java-17-orange?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/17/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Arquitetura](https://img.shields.io/badge/Arquitetura-Hexagonal-10B981)](docs/ARCHITECTURE.md)
+[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-10B981)](docs/ARCHITECTURE.md)
 
 </div>
 
 ---
 
-O **knowledgeSupport** integra os chamados do **Jira**, mantém um catálogo de **padrões de erro e soluções** (Standards) e já cruza automaticamente cada chamado com os padrões cadastrados para sugerir a solução — no roadmap, responde direto via **Chatwoot**. A cada padrão cadastrado, o sistema "aprende": o mesmo erro nunca precisa ser resolvido duas vezes.
+**knowledgeSupport** integrates **Jira** tickets, keeps a catalog of **error patterns and solutions** (Standards), and already cross-references every ticket against the registered patterns to suggest a solution — on the roadmap, it will answer directly via **Chatwoot**. Every time a Standard is registered, the system "learns": the same error never has to be solved twice.
 
-Construído em **Java 17 + Spring Boot** com **Arquitetura Hexagonal** (Ports & Adapters).
+Built with **Java 17 + Spring Boot** using **Hexagonal Architecture** (Ports & Adapters).
 
-## 📚 Documentação
+## 📚 Documentation
 
-| Documento | O que tem |
+| Document | What's in it |
 |---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | A arquitetura hexagonal do projeto: camadas, ports, adapters, diagramas, fluxos e decisões |
-| [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md) | Mapa comentado das pastas + "onde colocar o quê" + convenções de nome |
-| [docs/CONTRIBUTING.md](CONTRIBUTING.md) | Convenção de commits e versionamento automático (Release Please) |
-| [CHANGELOG.md](CHANGELOG.md) | Histórico de versões (gerado automaticamente) |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The project's hexagonal architecture: layers, ports, adapters, diagrams, flows and decisions |
+| [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md) | Annotated map of the folders + "where to put what" + naming conventions |
+| [docs/CONTRIBUTING.md](CONTRIBUTING.md) | Commit convention and automatic versioning (Release Please) |
+| [CHANGELOG.md](CHANGELOG.md) | Version history (auto-generated) |
 
-## 🚀 Como rodar
+## 🚀 How to run
 
-**Requisitos:** Java 17, Docker (para o PostgreSQL local).
+**Requirements:** Java 17, Docker (for local PostgreSQL).
 
 ```bash
-# 1. Configuração: copie o modelo e preencha (token do Jira etc.)
+# 1. Configuration: copy the template and fill it in (Jira token, etc.)
 cp .env.example .env
 
-# 2. Suba o banco local
+# 2. Start the local database
 docker compose up -d
 
-# 3. Rode a aplicação (o Spring lê o .env sozinho)
+# 3. Run the application (Spring reads the .env on its own)
 ./mvnw spring-boot:run
 ```
 
-> O `.env` nunca é commitado (está no `.gitignore`). Para usar um Postgres externo
-> (ex: Supabase), basta trocar as variáveis `DB_*` no `.env` — nenhum código muda.
+> `.env` is never committed (it's in `.gitignore`). To use an external Postgres
+> (e.g. Supabase), just swap the `DB_*` variables in `.env` — no code changes needed.
 
 ## 🔌 API
 
-A documentação da API é **gerada automaticamente** (springdoc/OpenAPI) e servida pela própria aplicação — sempre atualizada, com exemplos e execução interativa ("Try it out"):
+The API documentation is **generated automatically** (springdoc/OpenAPI) and served by the application itself — always up to date, with examples and interactive execution ("Try it out"):
 
-| Endereço (com o app rodando) | O que é |
+| Address (with the app running) | What it is |
 |---|---|
-| [`/swagger-ui.html`](http://localhost:8080/swagger-ui.html) | 📖 Documentação interativa da API (Swagger UI) |
-| [`/v3/api-docs`](http://localhost:8080/v3/api-docs) | Especificação OpenAPI 3 em JSON (importável no Postman/Insomnia) |
-| [`/actuator/info`](http://localhost:8080/actuator/info) | Versão e commit do build |
-| [`/actuator/health`](http://localhost:8080/actuator/health) | Saúde da aplicação |
+| [`/swagger-ui.html`](http://localhost:8080/swagger-ui.html) | 📖 Interactive API documentation (Swagger UI) |
+| [`/v3/api-docs`](http://localhost:8080/v3/api-docs) | OpenAPI 3 spec in JSON (importable into Postman/Insomnia) |
+| [`/actuator/info`](http://localhost:8080/actuator/info) | Build version and commit |
+| [`/actuator/health`](http://localhost:8080/actuator/health) | Application health |
 
-Em resumo: `/api/standards` (CRUD da base de conhecimento), `/api/calleds` (chamados ao vivo do Jira, somente leitura) e `/api/calleds/{key}/analysis` (cruza um chamado com os Standards por rotina + nome do erro e devolve a solução, se encontrar). Detalhes de cada rota, campos e exemplos: no Swagger.
+In short: `/api/standards` (knowledge base CRUD), `/api/calleds` (live, read-only Jira tickets) and `/api/calleds/{key}/analysis` (cross-references a ticket against the Standards by routine + error name and returns the solution, if found). Details for each route, field and example: in Swagger.
 
-## 🧭 A arquitetura em 30 segundos
+## 🧭 The architecture in 30 seconds
 
 ```
-Cliente HTTP ─▶ adapter/in/web ─▶ port/in ─▶ application/service ─▶ port/out ─▶ adapter/out ─▶ Postgres / Jira
-                (Controllers)   (UseCases)   (regras de negócio)   (contratos)  (JPA / RestClient)
+HTTP client ─▶ adapter/in/web ─▶ port/in ─▶ application/service ─▶ port/out ─▶ adapter/out ─▶ Postgres / Jira
+                (Controllers)   (UseCases)   (business rules)      (contracts)  (JPA / RestClient)
 ```
 
-- O **núcleo** (`domain` + `application`) não conhece HTTP, SQL nem Jira.
-- **Ports** são interfaces: o núcleo declara o que oferece (`port/in`) e o que precisa (`port/out`).
-- **Adapters** traduzem cada fronteira e são trocáveis sem tocar o núcleo.
+- The **core** (`domain` + `application`) knows nothing about HTTP, SQL or Jira.
+- **Ports** are interfaces: the core declares what it offers (`port/in`) and what it needs (`port/out`).
+- **Adapters** translate each boundary and are swappable without touching the core.
 
-Detalhes, diagramas e o porquê de cada decisão: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Details, diagrams and the reasoning behind each decision: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## 🤝 Contribuindo
+## 🤝 Contributing
 
-1. Leia [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) e [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md).
-2. Siga Conventional Commits (`feat:`, `fix:`, `chore:` — ver [CONTRIBUTING.md](CONTRIBUTING.md)).
-3. A versão é automática: `feat`/`fix` na `main` alimentam o Release PR do bot; o merge dele publica a release.
+1. Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md).
+2. Follow Conventional Commits (`feat:`, `fix:`, `chore:` — see [CONTRIBUTING.md](CONTRIBUTING.md)).
+3. Versioning is automatic: `feat`/`fix` on `main` feed the bot's Release PR; merging it publishes the release.
 
 ## 🗺️ Roadmap
 
-- [x] CRUD de Standards (PostgreSQL)
-- [x] Integração de leitura com o Jira (`Called`)
-- [x] Versionamento automático (Release Please + Actuator)
-- [x] Rotina e nome do erro estruturados (campos customizados do Jira) nos chamados e padrões
-- [x] `AnalyzeCalledUseCase` — sugerir solução cruzando chamado × padrões (rotina + nome do erro + solução preenchida)
-- [ ] Integração Chatwoot (webhook de entrada + resposta automática)
-- [ ] Interface web de gestão
+- [x] Standards CRUD (PostgreSQL)
+- [x] Read integration with Jira (`Called`)
+- [x] Automatic versioning (Release Please + Actuator)
+- [x] Structured routine and error name (Jira custom fields) on tickets and standards
+- [x] `AnalyzeCalledUseCase` — suggest a solution by cross-referencing ticket × standards (routine + error name + filled-in solution)
+- [ ] Chatwoot integration (inbound webhook + automatic reply)
+- [ ] Web management interface

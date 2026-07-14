@@ -1,15 +1,15 @@
-# Contribuindo
+# Contributing
 
-## Versionamento
+## Versioning
 
-A versão deste projeto é **gerada automaticamente** — não edite o `<version>`
-do `pom.xml` manualmente nem crie tags.
+This project's version is **generated automatically** — do not edit the `<version>`
+in `pom.xml` by hand, and don't create tags.
 
-Basta seguir o padrão de commit abaixo, que o resto acontece sozinho:
+Just follow the commit convention below; the rest happens on its own:
 
-- `fix: descrição` → correção de bug (sobe versão patch)
-- `feat: descrição` → nova funcionalidade (sobe versão minor)
-- `feat!: descrição` (ou rodapé `BREAKING CHANGE:`) → mudança incompatível (sobe versão major)
+- `fix: description` → bug fix (bumps patch version)
+- `feat: description` → new feature (bumps minor version)
+- `feat!: description` (or a `BREAKING CHANGE:` footer) → incompatible change (bumps major version)
 
-Ao dar push/merge no `main`, um bot (Release Please) abre um PR próprio
-propondo a nova versão. Você não precisa mexer nisso.
+On push/merge to `main`, a bot (Release Please) opens its own PR proposing the new
+version. You don't need to touch any of that.

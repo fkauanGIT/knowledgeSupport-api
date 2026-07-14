@@ -1,78 +1,81 @@
-# Limitações do knowledgeSupport-api
+# knowledgeSupport-api limitations
 
-> Este documento existe pra não deixar a arquitetura bonita disfarçar um problema de domínio.
-> Leia junto com [ARCHITECTURE.md](ARCHITECTURE.md).
+> This document exists so the pretty architecture doesn't disguise a domain problem.
+> Read it together with [ARCHITECTURE.md](ARCHITECTURE.md).
 
-## O problema central: o matching ainda não entende sinônimo, só texto parecido
+## The core problem: matching still doesn't understand synonyms, just similar-looking text
 
-**Atualizado (fase 1.1–1.3 do `BACKLOG.md`):** o matcher deixou de exigir igualdade exata
-de string. `AnalyzeCalledService.analyze` agora tenta, em cascata:
+**Updated (phase 1.1–1.3 of `BACKLOG.md`):** the matcher no longer requires exact string
+equality. `AnalyzeCalledService.analyze` now tries, in cascade:
 
-1. Match exato: `routineNumber` igual + `errorName`/`standardName` normalizados (sem
-   acento/caixa/espaço duplicado, via `TextSimilarity.normalize`) — mesmo comportamento de
-   antes, só que tolerante a diferença de digitação trivial.
-2. Score de similaridade de texto (`TextSimilarity.score`): tokeniza
-   `titleCalled+descriptionCalled+errorName` contra `standardName+text`, remove stopwords PT
-   (preservando negação — "não" nunca é descartado) e mede **containment** (quanto do chamado
-   está coberto pelo Standard, não o inverso) com tolerância a typo (Levenshtein).
-   Assimétrico de propósito: um Standard rico, cobrindo vários jeitos de descrever o mesmo
-   bug, não deveria ser penalizado por ter mais texto do que o chamado. `routineNumber` virou
-   **filtro que prioriza candidatos**, não mais par obrigatório: um chamado sem rotina
-   preenchida, ou com rotina errada, ainda pode encontrar Standard pelo texto.
-3. Threshold configurável (`matching.threshold`, default 0.4) decide o que conta como match;
-   o score fica visível no `MatchMethod` e na resposta da API (`CalledAnalysisResponse.score`).
+1. Exact match: same `routineNumber` + normalized `errorName`/`standardName` (no
+   accents/case/duplicate spaces, via `TextSimilarity.normalize`) — the same behavior as
+   before, just tolerant of trivial typing differences.
+2. Text similarity score (`TextSimilarity.score`): tokenizes
+   `titleCalled+descriptionCalled+errorName` against `standardName+text`, strips Portuguese
+   stopwords (preserving negation — "não" is never discarded) and measures **containment**
+   (how much of the ticket is covered by the Standard, not the other way around) with typo
+   tolerance (Levenshtein). Asymmetric on purpose: a rich Standard, covering several ways of
+   describing the same bug, shouldn't be penalized for having more text than the ticket.
+   `routineNumber` became a **filter that prioritizes candidates**, no longer a mandatory
+   pair: a ticket with no routine filled in, or with the wrong routine, can still find a
+   Standard by text.
+3. A configurable threshold (`matching.threshold`, default 0.4) decides what counts as a
+   match; the score is visible in `MatchMethod` and in the API response
+   (`CalledAnalysisResponse.score`).
 
-Isso já resolve o caso de digitação divergente trivial ("Caixa não fecha" vs "caixa nao
-fecha") e erro de digitação (Levenshtein). **Não resolve** o caso mais difícil, que segue
-sendo o cenário real de N3:
+This already solves the case of trivial spelling divergence ("Caixa não fecha" vs. "caixa nao
+fecha") and typos (Levenshtein). **It does not solve** the harder case, which is still the
+real-world N3 scenario:
 
-- O containment score mede **sobreposição de palavras**, não significado. *"Fechei um caixa
-  ontem e ele ainda consta em aberto"* e *"caixa preso em aberto após fechamento"*
-  compartilham poucas palavras exatas (ou próximas por Levenshtein) apesar de serem o mesmo
-  problema — isso só um estágio semântico (embeddings, item 1.5 do backlog, ainda não
-  implementado) resolveria. Pior ainda quando a causa raiz nunca foi escrita no chamado
-  original (ex: um sintoma de UI que só se conecta a um problema de configuração fiscal
-  depois de investigado) — nem embeddings resolveriam isso, porque a palavra-chave da causa
-  simplesmente não existe no texto de nenhum dos dois lados até alguém descobrir e cadastrar.
-- `Standard.result` continua um campo único de "resposta final", não uma trilha de
-  investigação (item 1.6, também não implementado).
-- A base de Standards ainda é varrida inteira em memória (`findAll()`); full-text search do
-  Postgres (item 1.4) só entra quando o volume justificar.
+- The containment score measures **word overlap**, not meaning. *"I closed a register
+  yesterday and it's still showing as open"* and *"register stuck open after closing"*
+  share few exact words (or Levenshtein-close ones) despite being the same problem — only a
+  semantic stage (embeddings, backlog item 1.5, not implemented yet) would solve that. It's
+  even worse when the root cause was never written in the original ticket (e.g. a UI symptom
+  that only turns out to be connected to a tax-configuration problem after investigation) —
+  not even embeddings would solve that, because the root-cause keyword simply doesn't exist
+  in either side's text until someone figures it out and registers it.
+- `Standard.result` is still a single "final answer" field, not an investigation trail
+  (item 1.6, also not implemented).
+- The Standards knowledge base is still scanned entirely in memory (`findAll()`); Postgres
+  full-text search (item 1.4) only comes in once the volume justifies it.
 
-**Consequência prática:** o sistema hoje pega bem paráfrase leve e erro de digitação, mas
-ainda depende de vocabulário compartilhado entre quem abriu o chamado e quem cadastrou o
-Standard. Dois relatos com vocabulário totalmente diferente para o mesmo bug real ainda
-não se encontram.
+**Practical consequence:** the system today handles light paraphrasing and typos well, but
+still depends on shared vocabulary between whoever opened the ticket and whoever registered
+the Standard. Two reports using completely different vocabulary for the same real bug still
+won't find each other.
 
-Trocar de banco, trocar o Jira, adicionar Chatwoot — nada disso resolve isso. A arquitetura
-hexagonal protege o núcleo de mudanças de infraestrutura; ela não corrige uma regra de
-negócio malformada. O defeito está dentro do hexágono, não na borda.
+Swapping databases, swapping Jira, adding Chatwoot — none of that fixes this. Hexagonal
+architecture protects the core from infrastructure changes; it doesn't fix a malformed
+business rule. The defect is inside the hexagon, not at the boundary.
 
-## Outras limitações conhecidas (não são o foco deste documento, mas existem)
+## Other known limitations (not the focus of this document, but real)
 
-| Limitação | Onde | Impacto |
+| Limitation | Where | Impact |
 |---|---|---|
-| Autenticação é só uma chave estática compartilhada, sem usuários/roles | `adapter/in/web/security` (`ApiKeyAuthFilter`) | Suficiente pra máquina-a-máquina (webhook do Jira, chamadas internas) sem login; se surgir um frontend com usuários reais (item 2.6), isso precisa virar algo com identidade por usuário (ex: JWT) |
-| `Called` nunca é persistido, sempre busca ao vivo no Jira | `CalledProviderPort` / `JiraCalledAdapter` | Paginado (`nextPageToken`) e com retry em 429 desde a fase 3.3, mas ainda sem cache — toda listagem bate no Jira |
-| Score de texto é sobreposição de palavras, não semântica | `TextSimilarity.score` | Sinônimo/paráfrase distante ("caixa não fecha" x "operador não consegue encerrar o dia") ainda não casa — precisa do item 1.5 (embeddings) |
-| `FilterCategory` continua fixo em `PENDING` | `JiraCalledMapper.toDomain` | Não existe campo confiável no Jira pra derivar SUPPORT/INFRASTRUCTURE/DEVELOPMENT hoje — precisaria de um campo de negócio novo, não é só ler mais um field da issue |
-| `GapReportService`/`FeedbackService` sem teste de integração | `GapReportServiceTest`/`FeedbackServiceTest` cobrem a lógica com ports mockadas | Query real do Postgres (`findByStandardId`) e paginação real do Jira não são exercitadas em teste |
+| Authentication is just a static shared key, no users/roles | `adapter/in/web/security` (`ApiKeyAuthFilter`) | Fine for machine-to-machine (Jira webhook, internal calls) with no login; if a frontend with real users shows up (item 2.6), this needs to become something with per-user identity (e.g. JWT) |
+| `Called` is never persisted, always fetched live from Jira | `CalledProviderPort` / `JiraCalledAdapter` | Paginated (`nextPageToken`) and retries on 429 since phase 3.3, but still no cache — every listing hits Jira |
+| Text score is word overlap, not semantics | `TextSimilarity.score` | A distant synonym/paraphrase ("register won't close" vs. "cashier can't close out the day") still doesn't match — needs item 1.5 (embeddings) |
+| **Similar-but-different problems compete for the same routine** | `TextSimilarity.score` / `CalledStandardMatcher` | The containment score measures word overlap, not the *nature* of the problem. Two genuinely different issues that happen to share the same routine and some vocabulary can tie or even have the wrong one win — e.g. a registered fix like "press F5 and retry" (a system glitch) versus a ticket phrased as "can't make a sale on routine 4116" that on investigation turns out to be "I don't know how to complete a sale" (a training gap, not a bug). The score has no dimension for *type of cause* (bug vs. lack of training vs. configuration), only for word overlap within a routine. Today the safety net is the feedback loop (`FeedbackService`/accuracy, item 2.4): if a Standard keeps getting suggested for the wrong kind of ticket, its accuracy rate drops and signals that a more specific Standard is missing. A structural fix — tagging Standards with a "cause type" as a second filter alongside `routineNumber` — is a business decision (which field, whose call) that hasn't been made; see the `FilterCategory` limitation below for the same kind of open question. |
+| `FilterCategory` is still fixed at `PENDING` | `JiraCalledMapper.toDomain` | There's no reliable field in Jira today to derive SUPPORT/INFRASTRUCTURE/DEVELOPMENT — would need a new business field, not just reading one more field off the issue |
+| `GapReportService`/`FeedbackService` have no integration tests | `GapReportServiceTest`/`FeedbackServiceTest` cover the logic with mocked ports | The real Postgres query (`findByStandardId`) and real Jira pagination aren't exercised in tests |
 
-## O que precisaria mudar pra atender um fluxo de N3
+## What would need to change to support an N3 flow
 
-Isto é redesenho de regra de negócio dentro do núcleo, não um adapter novo:
+This is a business-rule redesign inside the core, not a new adapter:
 
-1. ~~Substituir igualdade exata em `errorName` por busca textual sobre `descriptionCalled` +
-   `Standard.text` (mantendo `routineNumber` como filtro, não par obrigatório).~~ **Feito** —
-   fuzzy match por containment score + Levenshtein, ver seção acima. Falta o degrau semântico
-   (embeddings) pra paráfrase distante — e mesmo esse degrau não resolve causa raiz nunca
-   escrita no chamado original (ver exemplo acima).
-2. Modelar `Standard` como uma sequência de passos de investigação (tabelas, campos,
-   queries, hipóteses descartadas), não um único campo `result`. Ainda não feito — depende
-   do item 1 estar validado em uso real (item 1.6 do `BACKLOG.md`).
-3. Camada semântica (embeddings) como último degrau da cascata, nunca substituindo os
-   métodos determinísticos acima (item 1.5 do `BACKLOG.md`, opcional/futuro).
+1. ~~Replace exact equality on `errorName` with text search over `descriptionCalled` +
+   `Standard.text` (keeping `routineNumber` as a filter, not a mandatory pair).~~ **Done** —
+   fuzzy matching via containment score + Levenshtein, see the section above. Still missing
+   the semantic step (embeddings) for distant paraphrasing — and even that step wouldn't fix
+   a root cause that was never written down in the original ticket (see the example above).
+2. Model `Standard` as a sequence of investigation steps (tables, fields,
+   queries, discarded hypotheses), not a single `result` field. Not done yet — depends
+   on item 1 being validated in real use (backlog item 1.6).
+3. A semantic layer (embeddings) as the last step of the cascade, never replacing the
+   deterministic methods above (backlog item 1.5, optional/future).
 
-Com o item 1 feito, o sistema já pega paráfrase leve e erro de digitação — mas ainda serve
-melhor a erros semi-determinísticos do que a diagnóstico de causa raiz N3 com vocabulário
-totalmente livre. Os itens 2 e 3 são o que falta pra isso mudar de verdade.
+With item 1 done, the system already handles light paraphrasing and typos — but it still
+serves semi-deterministic errors better than root-cause N3 diagnosis with fully free
+vocabulary. Items 2 and 3 are what's missing for that to really change.

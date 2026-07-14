@@ -1,46 +1,46 @@
-# Arquitetura do knowledgeSupport-api
+# knowledgeSupport-api Architecture
 
-> Guia de arquitetura para quem vai contribuir, estudar ou evoluir o projeto.
-> Leia junto com [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
+> Architecture guide for anyone contributing to, studying, or evolving the project.
+> Read it together with [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
 
-## O que o sistema faz
+## What the system does
 
-O **knowledgeSupport** é uma base de conhecimento de suporte técnico. A ideia central:
+**knowledgeSupport** is a technical support knowledge base. The core idea:
 
-1. Chamados (`Called`) chegam de fora — hoje, puxados da API do **Jira** (projeto SUP).
-2. Padrões de erro (`Standard`) são cadastrados e persistidos no **PostgreSQL** — cada um descreve um erro conhecido e sua solução.
-3. O sistema **compara** o chamado com os padrões cadastrados (rotina + nome do erro) e devolve a solução automaticamente quando encontra um Standard com solução preenchida. Quanto mais padrões cadastrados, mais o sistema "aprende".
-4. (Roadmap) Integração com **Chatwoot** para receber conversas e responder o solicitante.
+1. Tickets (`Called`) come from outside — today, pulled from the **Jira** API (project SUP).
+2. Error patterns (`Standard`) are registered and persisted in **PostgreSQL** — each one describes a known error and its solution.
+3. The system **compares** the ticket against the registered patterns (routine + error name) and automatically returns the solution when it finds a Standard with a filled-in solution. The more patterns registered, the more the system "learns".
+4. (Roadmap) **Chatwoot** integration to receive conversations and reply to the requester.
 
-## Por que Arquitetura Hexagonal?
+## Why Hexagonal Architecture?
 
-O projeto usa **Arquitetura Hexagonal** (Ports & Adapters). O princípio em uma frase:
+The project uses **Hexagonal Architecture** (Ports & Adapters). The principle in one sentence:
 
-> **As regras de negócio no centro não sabem COMO o mundo externo fala com elas, nem ONDE os dados são guardados.**
+> **The business rules at the center don't know HOW the outside world talks to them, nor WHERE the data is stored.**
 
-Isso se materializa em duas ferramentas da linguagem:
+This is achieved with two language tools:
 
-- **Interfaces (ports)** — contratos que o núcleo declara ("preciso de alguém que salve" / "eu ofereço criar um Standard").
-- **Injeção de dependência (Spring)** — quem cumpre cada contrato é decidido fora do núcleo, na inicialização.
+- **Interfaces (ports)** — contracts the core declares ("I need someone to save this" / "I offer the ability to create a Standard").
+- **Dependency injection (Spring)** — who fulfills each contract is decided outside the core, at startup.
 
-O ganho prático: trocar Jira por outro sistema, Postgres por outro banco, ou REST por outro canal **não toca o núcleo** — cria-se/troca-se um adapter.
+The practical payoff: swapping Jira for another system, Postgres for another database, or REST for another channel **never touches the core** — you create/swap an adapter.
 
-## O hexágono do projeto
+## The project's hexagon
 
 ```mermaid
 flowchart LR
-    subgraph EXT_IN["🌍 Mundo externo (quem nos chama)"]
-        HTTP["Cliente HTTP<br/>(navegador, Postman, front)"]
+    subgraph EXT_IN["🌍 Outside world (who calls us)"]
+        HTTP["HTTP client<br/>(browser, Postman, frontend)"]
     end
 
-    subgraph ADAPTER_IN["adapter/in (traduz p/ dentro)"]
+    subgraph ADAPTER_IN["adapter/in (translates inward)"]
         SC["StandardController"]
         CC["CalledController"]
     end
 
-    subgraph CORE["⬡ Núcleo (application + domain)"]
+    subgraph CORE["⬡ Core (application + domain)"]
         direction TB
-        subgraph PORT_IN["port/in — o que o núcleo OFERECE"]
+        subgraph PORT_IN["port/in — what the core OFFERS"]
             UC_STD["Create/Get/List/Update/Delete<br/>StandardUseCase"]
             UC_CALL["ListCalledsUseCase"]
             UC_ANALYZE["AnalyzeCalledUseCase"]
@@ -49,7 +49,7 @@ flowchart LR
         CS["CalledService"]
         AS["AnalyzeCalledService"]
         DOM["domain: Standard, Called,<br/>Requester, CalledAnalysis"]
-        subgraph PORT_OUT["port/out — o que o núcleo PRECISA"]
+        subgraph PORT_OUT["port/out — what the core NEEDS"]
             RP["StandardRepositoryPort"]
             CP["CalledProviderPort"]
         end
@@ -62,96 +62,96 @@ flowchart LR
         AS --> CP
     end
 
-    subgraph ADAPTER_OUT["adapter/out (traduz p/ fora)"]
+    subgraph ADAPTER_OUT["adapter/out (translates outward)"]
         PA["StandardPersistenceAdapter<br/>+ JpaEntity + Mapper"]
         JA["JiraCalledAdapter<br/>+ payloads + Mapper"]
     end
 
-    subgraph EXT_OUT["🌍 Mundo externo (quem nós chamamos)"]
+    subgraph EXT_OUT["🌍 Outside world (who we call)"]
         PG[("PostgreSQL")]
-        JIRA["API do Jira"]
+        JIRA["Jira API"]
     end
 
     HTTP --> SC & CC
     SC --> UC_STD
     CC --> UC_CALL
     CC --> UC_ANALYZE
-    RP -. "implementada por" .-> PA
-    CP -. "implementada por" .-> JA
+    RP -. "implemented by" .-> PA
+    CP -. "implemented by" .-> JA
     PA --> PG
     JA --> JIRA
 ```
 
-**Como ler:** setas cheias = fluxo de chamada; setas pontilhadas = "quem implementa o contrato". Repare que os dois adapters de saída apontam **para dentro** (implementam interfaces do núcleo) — essa é a **inversão de dependência** que protege o núcleo.
+**How to read it:** solid arrows = call flow; dotted arrows = "who implements the contract". Notice that both output adapters point **inward** (they implement interfaces owned by the core) — that's the **dependency inversion** that protects the core.
 
-## As três camadas
+## The three layers
 
-### 1. `domain` — o vocabulário do negócio
+### 1. `domain` — the business vocabulary
 
-Classes que representam os conceitos do suporte: `Standard` (padrão de erro + solução), `Called` (chamado), `Requester` (solicitante) e os enums (`IncidentType`, `FilterCategory`, ...). **Java puro**: sem Spring, sem JPA, sem JSON. Se um analista de suporte não reconheceria a palavra, ela não pertence a esta camada.
+Classes representing support concepts: `Standard` (error pattern + solution), `Called` (support ticket), `Requester` (the person who opened the ticket) and the enums (`IncidentType`, `FilterCategory`, ...). **Pure Java**: no Spring, no JPA, no JSON. If a support analyst wouldn't recognize the word, it doesn't belong in this layer.
 
-### 2. `application` — as regras e os contratos
+### 2. `application` — the rules and the contracts
 
-- **`port/in`** — interfaces com os casos de uso que o sistema **oferece** (`CreateStandardUseCase`, `ListCalledsUseCase`, `AnalyzeCalledUseCase`...). Quem chama: adapters de entrada. Quem implementa: services.
-- **`port/out`** — interfaces com o que o sistema **precisa de fora** (`StandardRepositoryPort`, `CalledProviderPort`). Quem chama: services. Quem implementa: adapters de saída.
-- **`service`** — a lógica de verdade (`StandardService`, `CalledService`, `AnalyzeCalledService`). Orquestra domínio e ports. Também não conhece tecnologia: nenhum import de web, JPA ou HTTP client.
+- **`port/in`** — interfaces with the use cases the system **offers** (`CreateStandardUseCase`, `ListCalledsUseCase`, `AnalyzeCalledUseCase`...). Called by: inbound adapters. Implemented by: services.
+- **`port/out`** — interfaces with what the system **needs from the outside** (`StandardRepositoryPort`, `CalledProviderPort`). Called by: services. Implemented by: outbound adapters.
+- **`service`** — the actual logic (`StandardService`, `CalledService`, `AnalyzeCalledService`). Orchestrates domain and ports. Also knows nothing about technology: no imports of web, JPA or HTTP client.
 
-### 3. `adapter` — os tradutores de fronteira
+### 3. `adapter` — the boundary translators
 
-Todo código que fala um "idioma" externo (HTTP, SQL, API do Jira) vive aqui:
+All code that speaks an external "language" (HTTP, SQL, the Jira API) lives here:
 
-- **`adapter/in/web`** — canal REST: controllers + records `*Request`/`*Response` (o formato do **nosso** JSON).
-- **`adapter/out/persistence`** — canal banco: `StandardJpaEntity` (formato da tabela), `StandardJpaRepository` (Spring Data) e `StandardMapper`.
-- **`adapter/out/jira`** — canal Jira: `JiraCalledAdapter` (REST client), records `Jira*` (formato do JSON **deles**, incluindo ADF) e `JiraCalledMapper`.
+- **`adapter/in/web`** — REST channel: controllers + `*Request`/`*Response` records (**our** JSON format).
+- **`adapter/out/persistence`** — database channel: `StandardJpaEntity` (table format), `StandardJpaRepository` (Spring Data) and `StandardMapper`.
+- **`adapter/out/jira`** — Jira channel: `JiraCalledAdapter` (REST client), `Jira*` records (**their** JSON format, including ADF) and `JiraCalledMapper`.
 
-## A regra de dependência (a única regra inegociável)
+## The dependency rule (the one non-negotiable rule)
 
 ```
-adapter  ──pode importar──▶  application  ──pode importar──▶  domain
-domain      não importa nada do projeto
-application não importa nada de adapter (nem de framework de infra)
+adapter  ──may import──▶  application  ──may import──▶  domain
+domain      imports nothing from the project
+application imports nothing from adapter (nor from any infra framework)
 ```
 
-Na prática, o teste é simples: **abra os imports do arquivo.** Um service com `import jakarta.persistence...` ou um domínio com `import com.fasterxml.jackson...` está violando a arquitetura.
+In practice, the test is simple: **open the file's imports.** A service with `import jakarta.persistence...` or a domain class with `import com.fasterxml.jackson...` is violating the architecture.
 
-## Por que cada conceito tem "três versões"?
+## Why does every concept have "three versions"?
 
-O `Standard` existe como `StandardRequest`/`StandardResponse` (fronteira web), `Standard` (domínio) e `StandardJpaEntity` (fronteira banco). Parece duplicação, mas cada versão pertence a um mundo com motivos próprios para mudar: o JSON da API pode mudar sem quebrar a tabela do banco, e vice-versa. Os **mappers** nas fronteiras fazem a tradução — formatos externos "morrem" dentro do adapter e nunca circulam pelo núcleo.
+`Standard` exists as `StandardRequest`/`StandardResponse` (web boundary), `Standard` (domain) and `StandardJpaEntity` (database boundary). It looks like duplication, but each version belongs to a world with its own reasons to change: the API's JSON can change without breaking the database table, and vice versa. The **mappers** at the boundaries do the translation — external formats "die" inside the adapter and never circulate through the core.
 
-O mesmo vale para o `Called`: o JSON gigante do Jira (40+ campos, descrição em árvore ADF) vira um `Called` limpo dentro do `JiraCalledMapper`, e o resto do sistema nunca vê um campo do Jira.
+The same applies to `Called`: Jira's giant JSON (40+ fields, tree-shaped ADF description) becomes a clean `Called` inside `JiraCalledMapper`, and the rest of the system never sees a raw Jira field.
 
-## Fluxos reais
+## Real flows
 
-### GET /api/calleds (buscar chamados do Jira)
+### GET /api/calleds (fetch tickets from Jira)
 
 ```mermaid
 sequenceDiagram
-    participant C as Cliente HTTP
+    participant C as HTTP client
     participant CC as CalledController<br/>(adapter/in)
     participant UC as ListCalledsUseCase<br/>(port/in)
     participant CS as CalledService<br/>(application)
     participant CP as CalledProviderPort<br/>(port/out)
     participant JA as JiraCalledAdapter<br/>(adapter/out)
-    participant J as API do Jira
+    participant J as Jira API
 
     C->>CC: GET /api/calleds
     CC->>UC: listOpenCalleds()
-    UC->>CS: (implementação)
+    UC->>CS: (implementation)
     CS->>CP: fetchOpenCalleds()
-    CP->>JA: (implementação)
-    JA->>J: GET /rest/api/3/search/jql (JQL do .env)
-    J-->>JA: JSON do Jira (issues, ADF...)
+    CP->>JA: (implementation)
+    JA->>J: GET /rest/api/3/search/jql (JQL from .env)
+    J-->>JA: Jira JSON (issues, ADF...)
     JA->>JA: JiraCalledMapper.toDomain()
     JA-->>CS: List<Called>
     CS-->>CC: List<Called>
     CC-->>C: JSON List<CalledResponse>
 ```
 
-### GET /api/calleds/{key}/analysis (analisar um chamado)
+### GET /api/calleds/{key}/analysis (analyze a ticket)
 
 ```mermaid
 sequenceDiagram
-    participant C as Cliente HTTP
+    participant C as HTTP client
     participant CC as CalledController<br/>(adapter/in)
     participant UC as AnalyzeCalledUseCase<br/>(port/in)
     participant AS as AnalyzeCalledService<br/>(application)
@@ -162,92 +162,92 @@ sequenceDiagram
 
     C->>CC: GET /api/calleds/{key}/analysis
     CC->>UC: analyze(key)
-    UC->>AS: (implementação)
+    UC->>AS: (implementation)
     AS->>CP: fetchByKey(key)
-    CP->>JA: (implementação)
+    CP->>JA: (implementation)
     JA-->>AS: Optional<Called>
     AS->>RP: findAll()
-    RP->>PA: (implementação)
+    RP->>PA: (implementation)
     PA-->>AS: List<Standard>
-    AS->>AS: match exato (rotina + errorName)<br/>senão score de texto (rotina prioriza)
-    AS-->>UC: CalledAnalysis (Standard ou null)
+    AS->>AS: exact match (routine + errorName)<br/>otherwise text score (routine prioritizes)
+    AS-->>UC: CalledAnalysis (Standard or null)
     UC-->>CC: CalledAnalysis
     CC-->>C: JSON CalledAnalysisResponse
 ```
 
-Único fluxo do sistema que depende de **duas** ports de saída ao mesmo tempo — por isso `AnalyzeCalledService` é o único service que recebe `CalledProviderPort` e `StandardRepositoryPort` juntos no construtor.
+The only flow in the system that depends on **two** output ports at once — which is why `AnalyzeCalledService` is the only service that receives `CalledProviderPort` and `StandardRepositoryPort` together in its constructor.
 
-### POST /api/standards (cadastrar um padrão)
+### POST /api/standards (register a pattern)
 
 ```
-Cliente ▶ StandardController (StandardRequest → Standard)
-        ▶ CreateStandardUseCase ▶ StandardService
-        ▶ StandardRepositoryPort ▶ StandardPersistenceAdapter
-          (Standard → StandardJpaEntity via StandardMapper) ▶ PostgreSQL
+Client ▶ StandardController (StandardRequest → Standard)
+       ▶ CreateStandardUseCase ▶ StandardService
+       ▶ StandardRepositoryPort ▶ StandardPersistenceAdapter
+         (Standard → StandardJpaEntity via StandardMapper) ▶ PostgreSQL
 ```
 
-## Decisões de arquitetura (e seus porquês)
+## Architecture decisions (and their reasons)
 
-| Decisão | Motivo |
+| Decision | Reason |
 |---|---|
-| `Called` **não é persistido** | O Jira é a fonte da verdade dos chamados. Cada `GET /api/calleds` consulta o Jira ao vivo — sem sincronização, sem dado defasado. |
-| `Requester` não tem fatia própria | Ele vive **dentro** do `Called` (parte do agregado). Só ganharia repository/controller se o negócio precisasse gerenciá-lo isoladamente. |
-| `CalledController` só tem GET | Chamados nascem no Jira, não na nossa API. |
-| Formatos externos ficam nos adapters | JSON do Jira, ADF, entidades JPA: nada disso atravessa uma port. |
-| Config sensível via `.env` | Token do Jira e credenciais de banco nunca vão para o git (`.gitignore`). O Spring lê o arquivo via `spring.config.import`. |
-| JQL configurável (`JIRA_JQL`) | Mudar o filtro de chamados é configuração, não código. |
-| Só chamados WINTHOR entram | Filtro por Request Type na JQL (`.env`) — o escopo do produto é configuração, não código. |
-| Matching por *containment score* (não Jaccard simétrico), `routineNumber` vira filtro | Igualdade exata de `errorName` (mantida como primeiro degrau, mais barato e 100% explicável) raramente bate quando o "erro" é uma investigação em linguagem natural. `titleCalled`+`descriptionCalled`+`errorName` agora entram na comparação contra `standardName`+`text`; `routineNumber` deixou de ser par obrigatório e virou um filtro que só prioriza candidatos. O score é **assimétrico de propósito**: `interseção / tokens do chamado`, não `interseção / união` — Jaccard simétrico penalizava Standards ricos (texto longo, acumulando várias variações de sintoma), que é exatamente o comportamento que queremos incentivar com o tempo. Guarda mínima de 3 tokens no chamado evita containment inflado por match de poucas palavras genéricas. Score e threshold (`matching.threshold`) ficam explícitos no domínio (`MatchMethod`) e na config. |
-| Tolerância a typo via Apache Commons Text | Erro de digitação em uma palavra não pode zerar um match que seria óbvio para um humano. Única exceção documentada à regra "sem dependência nova sem justificar" (ver `BACKLOG.md`, item 1.3). |
-| `Standard.text`/`result` sem limite de 255 caracteres (`@Column(columnDefinition = "text")`) | JPA usa `varchar(255)` por padrão quando a coluna não é anotada. Isso trava o próprio fluxo de enriquecimento incentivado acima — um Standard que acumula sintomas precisa de texto longo. Descoberto testando o cadastro manualmente; `ddl-auto: update` não altera coluna existente, foi preciso rodar `ALTER TABLE` uma vez no banco. |
-| `JiraCalledMapper` remove timestamp de log do início do `errorName` | Respostas de rejeição (ex: SEFAZ) vêm do Jira como `"dd/MM/aaaa HH:mm:ss - Resposta da Sefaz: ..."`. O timestamp nunca se repete entre chamados — sobrando no texto, infla o denominador do containment score à toa e nunca deixa o match exato (1.1) funcionar, mesmo pra erros 100% determinísticos. Formato externo, morre no adapter, como o resto. |
-| `CalledStandardMatcher` extraído do `AnalyzeCalledService` | `GapReportService` precisa rodar a mesma cascata em lote sobre todos os chamados abertos. Se cada um chamasse `AnalyzeCalledUseCase.analyze(jiraKey)`, seria N+1: re-busca o Called (já em mãos) e re-busca `findAll()` dos Standards a cada iteração. A classe pura recebe `Called` + `List<Standard>` já carregados; quem busca é cada service, uma vez só. |
-| `GlobalExceptionHandler` (`@RestControllerAdvice`) central | `NoSuchElementException` virando 404 era tratado caso a caso (`CalledController` nem tratava, `StandardController` duplicava o mesmo catch em três métodos). Um handler por tipo de exceção do domínio, corpo de erro padronizado (`timestamp/status/error/message`) em toda a API. |
-| Feedback referencia `standardId` por UUID solto, sem `@ManyToOne` JPA | `FeedbackJpaEntity` não precisa carregar o grafo de `Standard` pra existir — mantém a tabela de feedback desacoplada e a query de agregação simples. Consistente com o resto do domínio, que trata relação entre agregados por id, não por referência de objeto persistido. |
-| `Called`/`Standard` com builder, sem setters | Construtor posicional de 10+ parâmetros do mesmo tipo (`String, String, String, ...`) é fonte de bug silencioso — trocar dois argumentos de lugar compila e não dá erro nenhum. Builder nomeia cada campo no call site. Setters removidos porque nada fora da própria classe os usava — checado antes de tirar. |
-| Rotina e nome do erro vêm estruturados do Jira | O formulário do JSM tem campos obrigatórios (custom fields `customfield_10432`/`10433`), lidos pelo adapter e mapeados para `Called.routineNumber`/`errorName`. Extração por regex da descrição é fallback, não fonte primária. |
-| Versionamento automático | Conventional Commits + Release Please. Ver [CONTRIBUTING.md](../CONTRIBUTING.md). |
-| Autenticação por API key estática (`X-API-KEY`), não JWT | Não há usuários fazendo login hoje — os consumidores são o webhook do Jira e chamadas máquina-a-máquina. JWT existe pra resolver identidade/expiração de sessão de usuário, que não é o problema aqui; uma chave secreta compartilhada (`ApiKeyAuthFilter`, `SecurityConfig`) resolve com menos código e sem dependência nova. Reavaliar se o item 2.6 (frontend com usuários) sair do papel. |
+| `Called` is **never persisted** | Jira is the source of truth for tickets. Every `GET /api/calleds` queries Jira live — no sync, no stale data. |
+| `Requester` has no dedicated slice | It lives **inside** `Called` (part of the aggregate). It would only earn its own repository/controller if the business needed to manage it in isolation. |
+| `CalledController` only has GET | Tickets are born in Jira, not in our API. |
+| External formats stay in the adapters | Jira JSON, ADF, JPA entities: none of that crosses a port. |
+| Sensitive config via `.env` | Jira token and database credentials never go into git (`.gitignore`). Spring reads the file via `spring.config.import`. |
+| Configurable JQL (`JIRA_JQL`) | Changing the ticket filter is configuration, not code. |
+| Only WINTHOR tickets come in | Filtered by Request Type in the JQL (`.env`) — the product's scope is configuration, not code. |
+| Matching by *containment score* (not symmetric Jaccard), `routineNumber` becomes a filter | Exact equality on `errorName` (kept as the first, cheapest and 100% explainable step) rarely matches when the "error" is a natural-language investigation. `titleCalled`+`descriptionCalled`+`errorName` now enter the comparison against `standardName`+`text`; `routineNumber` stopped being a mandatory pair and became a filter that only prioritizes candidates. The score is **asymmetric on purpose**: `intersection / ticket tokens`, not `intersection / union` — symmetric Jaccard penalized rich Standards (long text, accumulating several symptom variations), which is exactly the behavior we want to encourage over time. A minimum guard of 3 ticket tokens avoids inflated containment from matching a handful of generic words. Score and threshold (`matching.threshold`) are made explicit both in the domain (`MatchMethod`) and in config. |
+| Typo tolerance via Apache Commons Text | A typo in one word shouldn't zero out a match that would be obvious to a human. The only documented exception to the "no new dependency without justification" rule (see `BACKLOG.md`, item 1.3). |
+| `Standard.text`/`result` without the 255-character limit (`@Column(columnDefinition = "text")`) | JPA defaults to `varchar(255)` when the column isn't annotated. That was blocking the very enrichment flow encouraged above — a Standard that accumulates symptoms needs long text. Discovered by testing manual registration; `ddl-auto: update` doesn't alter an existing column, so an `ALTER TABLE` had to be run once on the database. |
+| `JiraCalledMapper` strips the log timestamp from the start of `errorName` | Rejection responses (e.g. SEFAZ) come from Jira as `"dd/MM/yyyy HH:mm:ss - Sefaz response: ..."`. The timestamp never repeats between tickets — left in the text, it inflates the containment score's denominator for nothing and prevents even the exact match (1.1) from working, even for 100% deterministic errors. External format, dies in the adapter, like everything else. |
+| `CalledStandardMatcher` extracted from `AnalyzeCalledService` | `GapReportService` needs to run the same cascade in bulk over every open ticket. If each one called `AnalyzeCalledUseCase.analyze(jiraKey)`, it would be N+1: re-fetching the Called (already in hand) and re-fetching `findAll()` of the Standards on every iteration. The pure class receives an already-loaded `Called` + `List<Standard>`; each service fetches once. |
+| Central `GlobalExceptionHandler` (`@RestControllerAdvice`) | `NoSuchElementException` becoming a 404 used to be handled case by case (`CalledController` didn't handle it at all, `StandardController` duplicated the same catch across three methods). One handler per domain exception type, a standardized error body (`timestamp/status/error/message`) across the whole API. |
+| Feedback references `standardId` as a bare UUID, without a JPA `@ManyToOne` | `FeedbackJpaEntity` doesn't need to load the `Standard` graph to exist — keeps the feedback table decoupled and the aggregation query simple. Consistent with the rest of the domain, which treats relationships between aggregates by id, not by a persisted object reference. |
+| `Called`/`Standard` use a builder, no setters | A positional constructor with 10+ parameters of the same type (`String, String, String, ...`) is a source of silent bugs — swapping two arguments compiles fine and throws nothing. The builder names each field at the call site. Setters were removed because nothing outside the class itself used them — checked before removing. |
+| Routine and error name come structured from Jira | The JSM form has required fields (custom fields `customfield_10432`/`10433`), read by the adapter and mapped to `Called.routineNumber`/`errorName`. Regex extraction from the description is a fallback, not the primary source. |
+| Automatic versioning | Conventional Commits + Release Please. See [CONTRIBUTING.md](../CONTRIBUTING.md). |
+| Static API key authentication (`X-API-KEY`), not JWT | There are no users logging in today — the consumers are the Jira webhook and machine-to-machine calls. JWT exists to solve user session identity/expiration, which isn't the problem here; a shared secret key (`ApiKeyAuthFilter`, `SecurityConfig`) solves it with less code and no new dependency. Reconsider if item 2.6 (frontend with real users) ever ships. |
 
-## Padrões de projeto presentes
+## Design patterns present
 
-- **Ports & Adapters (Hexagonal)** — estrutura geral.
-- **Dependency Injection** — Spring instancia e conecta tudo; ninguém dá `new` em dependência.
-- **Repository** — `StandardRepositoryPort` abstrai a persistência como uma "coleção".
-- **Mapper** — `StandardMapper`, `JiraCalledMapper`: conversão entre representações, sempre na fronteira.
-- **DTO** — records `*Request`/`*Response` e `Jira*`: objetos só-dados para atravessar fronteiras.
+- **Ports & Adapters (Hexagonal)** — the overall structure.
+- **Dependency Injection** — Spring instantiates and wires everything; nobody `new`s a dependency.
+- **Repository** — `StandardRepositoryPort` abstracts persistence as a "collection".
+- **Mapper** — `StandardMapper`, `JiraCalledMapper`: conversion between representations, always at the boundary.
+- **DTO** — `*Request`/`*Response` and `Jira*` records: data-only objects for crossing boundaries.
 
-## Como estender o sistema (receitas)
+## How to extend the system (recipes)
 
-### Nova operação sobre um conceito existente
-1. Crie a interface em `application/port/in` (ex: `AnalyzeCalledUseCase`).
-2. Implemente no service (ou crie um service novo).
-3. Exponha no controller correspondente.
+### New operation on an existing concept
+1. Create the interface in `application/port/in` (e.g. `AnalyzeCalledUseCase`).
+2. Implement it in the service (or create a new service).
+3. Expose it in the corresponding controller.
 
-### Nova integração externa que NÓS chamamos (ex: Chatwoot para enviar mensagem)
-1. Crie a port em `application/port/out` (ex: `ChatMessagePort`) — assinatura em termos do domínio.
-2. Crie `adapter/out/chatwoot/` com o adapter (`implements ChatMessagePort`), os records do payload e o mapper.
-3. Configuração (URL, token) no `.env` + `application.yaml`, injetada via `@Value`.
+### New outbound integration WE call (e.g. Chatwoot to send a message)
+1. Create the port in `application/port/out` (e.g. `ChatMessagePort`) — signature in domain terms.
+2. Create `adapter/out/chatwoot/` with the adapter (`implements ChatMessagePort`), the payload records and the mapper.
+3. Configuration (URL, token) in `.env` + `application.yaml`, injected via `@Value`.
 
-### Novo canal de entrada (ex: webhook do Chatwoot, scheduler)
-1. Crie `adapter/in/chatwoot/` (ou `adapter/in/scheduler/`).
-2. O adapter recebe o estímulo externo, traduz para o domínio e chama um use case existente ou novo.
-3. O núcleo não muda (a menos que a regra de negócio seja nova).
+### New inbound channel (e.g. a Chatwoot webhook, a scheduler)
+1. Create `adapter/in/chatwoot/` (or `adapter/in/scheduler/`).
+2. The adapter receives the external stimulus, translates it to the domain and calls an existing or new use case.
+3. The core doesn't change (unless the business rule itself is new).
 
-### Regra de ouro na dúvida
-"Quem inicia a conversa?" — algo de fora chama o sistema → `in`; o sistema chama algo de fora → `out`. Direção **da chamada**, não dos dados: *puxar* dados do Jira é `out`, porque somos nós que ligamos para ele.
+### Golden rule when in doubt
+"Who starts the conversation?" — something from outside calls the system → `in`; the system calls something outside → `out`. Direction **of the call**, not of the data: *pulling* data from Jira is `out`, because we're the ones calling them.
 
-## Roadmap de arquitetura
+## Architecture roadmap
 
-- [x] Campo `routineNumber` no `Standard` e no `Called` — sinal estruturado para o matcher (rotina vem do custom field do Jira).
-- [x] `AnalyzeCalledUseCase` — cruzar `Called` × `Standard` e sugerir solução (service com duas ports de saída: `CalledProviderPort` + `StandardRepositoryPort`).
-- [x] Testes de unidade do núcleo com ports mockadas (Mockito), sem banco, sem Jira, sem rede (`AnalyzeCalledServiceTest` e o resto da suíte de `application/service`).
-- [x] Campo `jiraKey` e status no `Called` — `CalledResponse` agora expõe os dois; `jiraKey` desbloqueia ir de `GET /api/calleds` direto pro `/{key}/analysis`.
-- [ ] `adapter/in/chatwoot` (webhook) e `adapter/out/chatwoot` (respostas) — não feito, sem credenciais configuradas.
-- [x] Match mais tolerante entre `errorName`/`standardName` e o texto do chamado — containment score (não Jaccard simétrico, ver tabela de decisões) com stopwords PT e tolerância a typo (Levenshtein), `routineNumber` como filtro em vez de par obrigatório (`TextSimilarity`, `AnalyzeCalledService`, `MatchMethod`).
-- [x] Tratar `NoSuchElementException` como 404 (hoje sobe como 500 genérico) — `GlobalExceptionHandler` (`@RestControllerAdvice`) centraliza isso pra todos os controllers, com corpo explicando o motivo.
-- [x] Paginação (`nextPageToken`) e retry com backoff em 429 no `JiraCalledAdapter`.
-- [x] `GapReportUseCase` (`GET /api/calleds/gap-report`) — agrega os chamados sem match por rotina, pra saber onde cadastrar Standard rende mais cobertura.
-- [x] `SubmitFeedbackUseCase`/`GetStandardAccuracyUseCase` (`POST /api/calleds/{key}/feedback`, `GET /api/standards/{id}/accuracy`) — feedback real de "resolveu ou não" vira taxa de acerto auditável por Standard.
-- [x] `Called`/`Standard` ganharam builder — construtor posicional de 10+ campos era fonte de bug silencioso.
-- [ ] `IncidentType`/`FilterCategory` reais — `IncidentType` já deriva do `issuetype` do Jira; `FilterCategory` continua fixo em `PENDING` (sem sinal confiável pra SUPPORT/INFRASTRUCTURE/DEVELOPMENT, ver `LIMITATIONS.md`).
+- [x] `routineNumber` field on `Standard` and `Called` — a structured signal for the matcher (routine comes from the Jira custom field).
+- [x] `AnalyzeCalledUseCase` — cross-reference `Called` × `Standard` and suggest a solution (service with two output ports: `CalledProviderPort` + `StandardRepositoryPort`).
+- [x] Unit tests for the core with mocked ports (Mockito), no database, no Jira, no network (`AnalyzeCalledServiceTest` and the rest of the `application/service` suite).
+- [x] `jiraKey` field and status on `Called` — `CalledResponse` now exposes both; `jiraKey` unlocks going straight from `GET /api/calleds` to `/{key}/analysis`.
+- [ ] `adapter/in/chatwoot` (webhook) and `adapter/out/chatwoot` (replies) — not done, no credentials configured.
+- [x] More tolerant matching between `errorName`/`standardName` and the ticket text — containment score (not symmetric Jaccard, see the decision table) with Portuguese stopwords and typo tolerance (Levenshtein), `routineNumber` as a filter instead of a mandatory pair (`TextSimilarity`, `AnalyzeCalledService`, `MatchMethod`).
+- [x] Treat `NoSuchElementException` as a 404 (previously bubbled up as a generic 500) — `GlobalExceptionHandler` (`@RestControllerAdvice`) centralizes this for all controllers, with a body explaining why.
+- [x] Pagination (`nextPageToken`) and retry-with-backoff on 429 in `JiraCalledAdapter`.
+- [x] `GapReportUseCase` (`GET /api/calleds/gap-report`) — aggregates unmatched tickets by routine, to show where registering a Standard yields the most coverage.
+- [x] `SubmitFeedbackUseCase`/`GetStandardAccuracyUseCase` (`POST /api/calleds/{key}/feedback`, `GET /api/standards/{id}/accuracy`) — real "did it solve it or not" feedback becomes an auditable accuracy rate per Standard.
+- [x] `Called`/`Standard` gained a builder — a positional constructor with 10+ fields was a source of silent bugs.
+- [ ] Real `IncidentType`/`FilterCategory` — `IncidentType` already derives from Jira's `issuetype`; `FilterCategory` is still fixed at `PENDING` (no reliable signal for SUPPORT/INFRASTRUCTURE/DEVELOPMENT yet, see `LIMITATIONS.md`).
