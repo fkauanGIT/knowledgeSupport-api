@@ -36,7 +36,7 @@ Você vai trabalhar no **knowledgeSupport-api**: API Java 17 + Spring Boot (4.x,
 chamados do Jira com rotina, nome do erro, jiraKey e status (paginado, retry em 429) ·
 análise em cascata (match exato → containment score+Levenshtein, `routineNumber` como
 filtro) · relatório de lacunas por rotina · 404 tratado centralmente · Swagger ·
-versionamento automático.
+autenticação por API key · versionamento automático.
 
 ---
 
@@ -92,8 +92,10 @@ versionamento automático.
 - [x] **3.1 Erros HTTP corretos** — `GlobalExceptionHandler` (`@RestControllerAdvice`):
       chamado/Standard inexistente → 404 com corpo explicativo, centralizado (antes cada
       controller repetia o mesmo catch).
-- [ ] **3.2 Autenticação** — Spring Security com API key ou básica; proteger Swagger em
-      produção. Pré-requisito para deploy fora de rede confiável.
+- [x] **3.2 Autenticação** — Spring Security com API key (`X-API-KEY`, header validado por
+      `ApiKeyAuthFilter`, chave em `.env`). Swagger/`/actuator/health`/`info` seguem públicos
+      de propósito (protegê-los é responsabilidade do deploy, item 3.8); todo o resto exige
+      a chave. Sem sessão/login — cada requisição se autentica sozinha.
 - [x] **3.3 Paginação/rate limit no adapter Jira** — `nextPageToken` em loop (trava de
       segurança em 20 páginas); 429 com retry + backoff respeitando `Retry-After`,
       devolve o que já coletou em vez de derrubar a listagem inteira.

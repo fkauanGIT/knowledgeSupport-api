@@ -52,7 +52,7 @@ negócio malformada. O defeito está dentro do hexágono, não na borda.
 
 | Limitação | Onde | Impacto |
 |---|---|---|
-| Sem autenticação/autorização nos endpoints | `adapter/in/web/*Controller` | Não é deploy-ready fora de rede totalmente confiável (item 3.2, não feito) |
+| Autenticação é só uma chave estática compartilhada, sem usuários/roles | `adapter/in/web/security` (`ApiKeyAuthFilter`) | Suficiente pra máquina-a-máquina (webhook do Jira, chamadas internas) sem login; se surgir um frontend com usuários reais (item 2.6), isso precisa virar algo com identidade por usuário (ex: JWT) |
 | `Called` nunca é persistido, sempre busca ao vivo no Jira | `CalledProviderPort` / `JiraCalledAdapter` | Paginado (`nextPageToken`) e com retry em 429 desde a fase 3.3, mas ainda sem cache — toda listagem bate no Jira |
 | Score de texto é sobreposição de palavras, não semântica | `TextSimilarity.score` | Sinônimo/paráfrase distante ("caixa não fecha" x "operador não consegue encerrar o dia") ainda não casa — precisa do item 1.5 (embeddings) |
 | `FilterCategory` continua fixo em `PENDING` | `JiraCalledMapper.toDomain` | Não existe campo confiável no Jira pra derivar SUPPORT/INFRASTRUCTURE/DEVELOPMENT hoje — precisaria de um campo de negócio novo, não é só ler mais um field da issue |

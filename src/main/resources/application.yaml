@@ -21,6 +21,10 @@ matching:
   # Score mínimo (0-1) de similaridade de texto para considerar um Standard como sugestão.
   threshold: ${MATCHING_THRESHOLD:0.4}
 
+security:
+  # Chave enviada no header X-API-KEY por qualquer cliente da API.
+  api-key: ${API_KEY}
+
 management:
   endpoints:
     web:
