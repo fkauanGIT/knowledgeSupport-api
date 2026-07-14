@@ -20,6 +20,8 @@ jira:
 matching:
   # Minimum text-similarity score (0-1) for a Standard to be considered a suggestion.
   threshold: ${MATCHING_THRESHOLD:0.4}
+  # Score (0-1) above which a text-score match is labeled LIKELY instead of UNCERTAIN.
+  high-confidence-threshold: ${MATCHING_HIGH_CONFIDENCE_THRESHOLD:0.75}
 
 security:
   # Key sent in the X-API-KEY header by any API client.

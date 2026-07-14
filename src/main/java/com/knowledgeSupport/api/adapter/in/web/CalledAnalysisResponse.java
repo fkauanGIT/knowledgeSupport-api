@@ -18,8 +18,14 @@ public record CalledAnalysisResponse(
         @Schema(description = "How the solution was found", example = "ROUTINE_AND_TEXT_SCORE")
         String method,
 
-        @Schema(description = "Match confidence, from 0 (none) to 1 (exact match)", example = "0.82")
-        double score) {
+        @Schema(description = "Match score, from 0 (none) to 1 (exact match)", example = "0.82")
+        double score,
+
+        @Schema(description = "How much to trust this result: CONFIRMED (exact match, safe to " +
+                "apply automatically), LIKELY (strong text match, still worth a glance), " +
+                "UNCERTAIN (cleared the minimum threshold but it's a guess — review before " +
+                "trusting it), NONE (no match found)", example = "LIKELY")
+        String confidence) {
 
     public static CalledAnalysisResponse from(CalledAnalysis analysis) {
         return new CalledAnalysisResponse(
@@ -27,7 +33,8 @@ public record CalledAnalysisResponse(
                 analysis.getCalled().getRoutineNumber(),
                 analysis.getMatchedStandard() == null ? null : analysis.getMatchedStandard().getResult(),
                 analysis.getMethod().getName(),
-                analysis.getMethod().getScore()
+                analysis.getMethod().getScore(),
+                analysis.getMethod().getConfidence().name()
         );
     }
 }
