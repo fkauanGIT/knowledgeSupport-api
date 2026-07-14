@@ -68,6 +68,12 @@ API key authentication · automatic versioning.
       `standardName`+`text` and gates on `result`, unaffected by steps being present, empty,
       or absent — no gating on `confirmed`, no peer review added (still one analyst
       authoring today, by choice — see `LIMITATIONS.md`).
+- [x] **1.7 Explicit confidence level on the analysis response** — `MatchMethod` gains a
+      `Confidence` (`CONFIRMED`/`LIKELY`/`UNCERTAIN`/`NONE`), exposed as
+      `CalledAnalysisResponse.confidence`. `matching.high-confidence-threshold` (default 0.75)
+      splits score-based matches into `LIKELY` vs `UNCERTAIN`; exact match is always
+      `CONFIRMED`. Separates "cleared the minimum threshold" from "safe to trust
+      automatically" — a labeling change, not a scoring change (see `LIMITATIONS.md`).
 
 ## PHASE 2 — Visible value (product)
 

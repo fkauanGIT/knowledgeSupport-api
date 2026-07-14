@@ -21,10 +21,11 @@ public class AnalyzeCalledService implements AnalyzeCalledUseCase {
 
     public AnalyzeCalledService(CalledProviderPort calledProviderPort,
                                  StandardRepositoryPort standardRepositoryPort,
-                                 @Value("${matching.threshold:0.4}") double threshold) {
+                                 @Value("${matching.threshold:0.4}") double threshold,
+                                 @Value("${matching.high-confidence-threshold:0.75}") double highConfidenceThreshold) {
         this.calledProviderPort = calledProviderPort;
         this.standardRepositoryPort = standardRepositoryPort;
-        this.matcher = new CalledStandardMatcher(threshold);
+        this.matcher = new CalledStandardMatcher(threshold, highConfidenceThreshold);
     }
 
     @Override
