@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.6.0...v0.7.0) (2026-07-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* GapReportResponse and RoutineGapResponse JSON field names changed from Portuguese to English (totalChamadosAnalisados -> totalCalledsAnalyzed, totalSemMatch -> totalWithoutMatch, lacunasPorRotina -> gapsByRoutine, quantidade -> count, percentualDasLacunas -> percentageOfGaps, exemplos -> examples). Clients of GET /api/calleds/gap-report must update their field references.
+
+### Features
+
+* translate public API fields and Swagger docs to English ([dded7cc](https://github.com/fkauanGIT/knowledgeSupport-api/commit/dded7cc5ace3a2d6c62b44f1f51a043b9086da7f))
+
 ## [0.6.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.5.0...v0.6.0) (2026-07-14)
 
 
