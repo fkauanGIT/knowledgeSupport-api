@@ -5,23 +5,23 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
-@Schema(description = "Onde cadastrar um Standard novo cobre mais chamados sem solução sugerida")
+@Schema(description = "Where registering a new Standard covers more tickets with no suggested solution")
 public record GapReportResponse(
 
-        @Schema(description = "Total de chamados abertos analisados")
-        int totalChamadosAnalisados,
+        @Schema(description = "Total number of open tickets analyzed")
+        int totalCalledsAnalyzed,
 
-        @Schema(description = "Quantos desses não encontraram Standard (method NONE)")
-        int totalSemMatch,
+        @Schema(description = "How many of those found no Standard (method NONE)")
+        int totalWithoutMatch,
 
-        @Schema(description = "Lacunas agrupadas por rotina, da maior pra menor")
-        List<RoutineGapResponse> lacunasPorRotina) {
+        @Schema(description = "Gaps grouped by routine, from largest to smallest")
+        List<RoutineGapResponse> gapsByRoutine) {
 
     public static GapReportResponse from(GapReport report) {
         return new GapReportResponse(
-                report.getTotalChamadosAnalisados(),
-                report.getTotalSemMatch(),
-                report.getLacunasPorRotina().stream().map(RoutineGapResponse::from).toList()
+                report.getTotalCalledsAnalyzed(),
+                report.getTotalWithoutMatch(),
+                report.getGapsByRoutine().stream().map(RoutineGapResponse::from).toList()
         );
     }
 }

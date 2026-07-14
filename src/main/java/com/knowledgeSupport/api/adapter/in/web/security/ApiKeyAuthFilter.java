@@ -14,8 +14,8 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Valida a API key enviada no header {@value #HEADER_NAME}. Não autentica usuário algum
- * (não há login) — só confirma que quem chamou conhece o segredo compartilhado via .env.
+ * Validates the API key sent in the {@value #HEADER_NAME} header. Doesn't authenticate any
+ * user (there's no login) — it only confirms that the caller knows the secret shared via .env.
  */
 @Component
 public class ApiKeyAuthFilter extends OncePerRequestFilter {

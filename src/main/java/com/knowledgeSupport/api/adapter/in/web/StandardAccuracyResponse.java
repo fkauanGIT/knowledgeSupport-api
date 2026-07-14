@@ -5,17 +5,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.UUID;
 
-@Schema(description = "Taxa de acerto de um Standard, baseada em feedback real registrado")
+@Schema(description = "Accuracy rate of a Standard, based on real recorded feedback")
 public record StandardAccuracyResponse(
         UUID standardId,
 
-        @Schema(description = "Quantos feedbacks esse Standard já recebeu")
+        @Schema(description = "How many feedback entries this Standard has received so far")
         int totalFeedbacks,
 
-        @Schema(description = "Quantos desses feedbacks confirmaram que resolveu")
+        @Schema(description = "How many of those feedback entries confirmed it solved the ticket")
         int resolvedCount,
 
-        @Schema(description = "resolvedCount / totalFeedbacks, 0 quando totalFeedbacks é 0 (sem dado ainda)")
+        @Schema(description = "resolvedCount / totalFeedbacks, 0 when totalFeedbacks is 0 (no data yet)")
         double accuracyRate) {
 
     public static StandardAccuracyResponse from(StandardAccuracy accuracy) {

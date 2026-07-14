@@ -3,24 +3,24 @@ package com.knowledgeSupport.api.adapter.in.web;
 import com.knowledgeSupport.api.domain.model.enums.IncidentType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Dados para cadastrar ou atualizar um padrão de erro")
+@Schema(description = "Data to register or update an error pattern")
 public record StandardRequest(
 
-        @Schema(description = "Nome curto que identifica o padrão", example = "Permissao de login HUB")
+        @Schema(description = "Short name identifying the pattern", example = "HUB login permission")
         String standardName,
 
-        @Schema(description = "Descrição do erro/sintoma como ele aparece nos chamados",
-                example = "Usuario com perfil comprador nao consegue logar no HUB")
+        @Schema(description = "Description of the error/symptom as it appears in tickets",
+                example = "User with buyer profile can't log into the HUB")
         String text,
 
-        @Schema(description = "Solução padrão: o passo a passo que resolve o erro",
-                example = "Adicionar o perfil COMPRADOR na tela de acessos do usuario")
+        @Schema(description = "Standard solution: the step-by-step that fixes the error",
+                example = "Add the BUYER profile in the user's access screen")
         String result,
 
-        @Schema(description = "Tipo do incidente", example = "ERROR")
+        @Schema(description = "Incident type", example = "ERROR")
         IncidentType incidentType,
 
-        @Schema(description = "Numero da rotina do WINTHOR (Opcional)", example = "1234")
+        @Schema(description = "WINTHOR routine number (optional)", example = "1234")
         Integer routineNumber
 ) {
 }

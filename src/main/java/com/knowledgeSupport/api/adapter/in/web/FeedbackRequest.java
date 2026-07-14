@@ -4,12 +4,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.UUID;
 
-@Schema(description = "Feedback sobre uma sugestão: o Standard indicado resolveu o chamado?")
+@Schema(description = "Feedback on a suggestion: did the indicated Standard solve the ticket?")
 public record FeedbackRequest(
 
-        @Schema(description = "Id do Standard que foi sugerido (veio de GET /api/calleds/{key}/analysis)")
+        @Schema(description = "Id of the Standard that was suggested (came from GET /api/calleds/{key}/analysis)")
         UUID standardId,
 
-        @Schema(description = "true se a solução do Standard resolveu o chamado de verdade")
+        @Schema(description = "true if the Standard's solution actually solved the ticket")
         boolean resolved) {
 }

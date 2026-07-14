@@ -5,22 +5,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
-@Schema(description = "Quanto uma rotina pesa nas lacunas de cadastro")
+@Schema(description = "How much a routine weighs in the registration gaps")
 public record RoutineGapResponse(
 
-        @Schema(description = "Número da rotina (null = chamados sem rotina preenchida)", nullable = true)
+        @Schema(description = "Routine number (null = tickets with no routine filled in)", nullable = true)
         Integer routineNumber,
 
-        @Schema(description = "Quantos chamados dessa rotina não encontraram Standard")
-        int quantidade,
+        @Schema(description = "How many tickets from this routine found no Standard")
+        int count,
 
-        @Schema(description = "Percentual do total de lacunas que essa rotina sozinha representa")
-        double percentualDasLacunas,
+        @Schema(description = "Percentage of the total gaps this routine alone represents")
+        double percentageOfGaps,
 
-        @Schema(description = "Títulos de exemplo, pra saber o que cadastrar")
-        List<String> exemplos) {
+        @Schema(description = "Example titles, to know what to register")
+        List<String> examples) {
 
     public static RoutineGapResponse from(RoutineGap gap) {
-        return new RoutineGapResponse(gap.getRoutineNumber(), gap.getQuantidade(), gap.getPercentualDasLacunas(), gap.getExemplos());
+        return new RoutineGapResponse(gap.getRoutineNumber(), gap.getCount(), gap.getPercentageOfGaps(), gap.getExamples());
     }
 }

@@ -8,49 +8,49 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Date;
 
 /**
- * Formato do JSON que a NOSSA API devolve (fronteira web, lado de saída da resposta).
- * Mesmo papel do StandardResponse.
+ * Shape of the JSON OUR API returns (web boundary, response side).
+ * Same role as StandardResponse.
  */
-@Schema(description = "Chamado de suporte, traduzido do Jira para o formato do domínio")
+@Schema(description = "Support ticket, translated from Jira into the domain format")
 public record CalledResponse(
 
-        @Schema(description = "Key do chamado no Jira — use pra montar a URL de /api/calleds/{key}/analysis",
+        @Schema(description = "Ticket key in Jira — use it to build the /api/calleds/{key}/analysis URL",
                 example = "SUP-1123")
         String jiraKey,
 
-        @Schema(description = "Título do chamado (summary no Jira)",
-                example = "Permissão de comprador não deixa fazer login no HUB")
+        @Schema(description = "Ticket title (summary in Jira)",
+                example = "Buyer permission won't let them log into the HUB")
         String titleCalled,
 
-        @Schema(description = "Descrição em texto puro (extraída do ADF do Jira)",
-                example = "Usuários com perfil de comprador recebem erro ao logar...")
+        @Schema(description = "Plain-text description (extracted from Jira's ADF)",
+                example = "Users with a buyer profile get an error when logging in...")
         String descriptionCalled,
 
-        @Schema(description = "Número da rotina")
+        @Schema(description = "Routine number")
         Integer routineNumber,
 
-        @Schema(description = "Nome do erro para comparação com os padrões (hoje espelha o título)")
+        @Schema(description = "Error name used to compare against the patterns (today mirrors the title)")
         String errorName,
 
-        @Schema(description = "Tipo do incidente", example = "ERROR")
+        @Schema(description = "Incident type", example = "ERROR")
         IncidentType incidentType,
 
-        @Schema(description = "Categoria de triagem", example = "PENDING")
+        @Schema(description = "Triage category", example = "PENDING")
         FilterCategory filterCategory,
 
-        @Schema(description = "Status atual no Jira", example = "Aguardando cliente")
+        @Schema(description = "Current status in Jira", example = "Waiting for customer")
         String status,
 
-        @Schema(description = "Nome de quem abriu o chamado (reporter no Jira)", example = "Francisco Kauan")
+        @Schema(description = "Name of whoever opened the ticket (reporter in Jira)", example = "Francisco Kauan")
         String requesterName,
 
-        @Schema(description = "Data de criação no Jira")
+        @Schema(description = "Creation date in Jira")
         Date createdAt,
 
-        @Schema(description = "Prazo (duedate no Jira), se definido", nullable = true)
+        @Schema(description = "Deadline (duedate in Jira), if set", nullable = true)
         Date deadline,
 
-        @Schema(description = "Última atualização no Jira")
+        @Schema(description = "Last update in Jira")
         Date updateAt) {
 
     public static CalledResponse from(Called called) {

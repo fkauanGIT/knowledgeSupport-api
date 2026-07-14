@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Date;
 import java.util.UUID;
 
-@Schema(description = "Feedback registrado")
+@Schema(description = "Recorded feedback")
 public record FeedbackResponse(
         UUID id,
         String jiraKey,

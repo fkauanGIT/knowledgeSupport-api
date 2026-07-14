@@ -9,8 +9,8 @@ import java.time.Instant;
 import java.util.NoSuchElementException;
 
 /**
- * "Chamado/Standard não existe" é erro de cliente (404), não falha de servidor (500).
- * Centraliza aqui em vez de cada controller capturar NoSuchElementException na mão.
+ * "Ticket/Standard doesn't exist" is a client error (404), not a server failure (500).
+ * Centralized here instead of each controller catching NoSuchElementException by hand.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {

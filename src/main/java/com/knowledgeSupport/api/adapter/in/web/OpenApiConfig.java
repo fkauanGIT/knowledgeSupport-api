@@ -13,10 +13,10 @@ import org.springframework.context.annotation.Configuration;
 import java.util.Optional;
 
 /**
- * Configuração do OpenAPI/Swagger — vive no adapter web porque documentar
- * a API REST é assunto da fronteira HTTP, não do núcleo.
- * A versão exibida vem do build (Maven build-info), sincronizada com o
- * Release Please; rodando pela IDE sem build Maven, cai no fallback "dev".
+ * OpenAPI/Swagger configuration — lives in the web adapter because documenting
+ * the REST API is the HTTP boundary's business, not the core's.
+ * The displayed version comes from the build (Maven build-info), synced with
+ * Release Please; running from the IDE without a Maven build falls back to "dev".
  */
 @Configuration
 public class OpenApiConfig {
@@ -30,19 +30,19 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("knowledgeSupport API")
                         .description("""
-                                Base de conhecimento de suporte técnico.
+                                Technical support knowledge base.
 
-                                - **Chamados (Calleds)**: puxados ao vivo do Jira (projeto SUP) — somente leitura.
-                                - **Padrões (Standards)**: catálogo de erros conhecidos e suas soluções, persistido em PostgreSQL.
-                                - **Roadmap**: análise automática (chamado × padrão) e integração com Chatwoot.
+                                - **Calleds**: pulled live from Jira (project SUP) — read-only.
+                                - **Standards**: catalog of known errors and their solutions, persisted in PostgreSQL.
+                                - **Roadmap**: automatic analysis (ticket × pattern) and Chatwoot integration.
 
-                                Arquitetura Hexagonal (Ports & Adapters) — ver documentação de arquitetura no repositório.
+                                Hexagonal Architecture (Ports & Adapters) — see the architecture docs in the repository.
 
-                                **Autenticação**: todos os endpoints exigem o header `X-API-KEY`. Clique em "Authorize" e cole a chave.""")
+                                **Authentication**: every endpoint requires the `X-API-KEY` header. Click "Authorize" and paste the key.""")
                         .version(version)
                         .contact(new Contact().name("Francisco Kauan").email("kauan.ti@grupocoagro.com")))
                 .externalDocs(new ExternalDocumentation()
-                        .description("Documentação de arquitetura (docs/ARCHITECTURE.md)")
+                        .description("Architecture documentation (docs/ARCHITECTURE.md)")
                         .url("https://github.com/fkauanGIT/knowledgeSupport-api/blob/main/docs/ARCHITECTURE.md"))
                 .addSecurityItem(new SecurityRequirement().addList(API_KEY_SCHEME))
                 .schemaRequirement(API_KEY_SCHEME, new SecurityScheme()

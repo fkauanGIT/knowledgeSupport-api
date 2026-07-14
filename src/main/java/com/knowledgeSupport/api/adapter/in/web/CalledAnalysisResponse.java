@@ -3,22 +3,22 @@ package com.knowledgeSupport.api.adapter.in.web;
 import com.knowledgeSupport.api.domain.model.CalledAnalysis;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Resultado da análise automática de um chamado")
+@Schema(description = "Result of a ticket's automatic analysis")
 public record CalledAnalysisResponse(
 
-        @Schema(description = "Título do chamado")
+        @Schema(description = "Ticket title")
         String titleCalled,
 
-        @Schema(description = "Número da rotina do chamado")
+        @Schema(description = "Ticket's routine number")
         Integer routineNumber,
 
-        @Schema(description = "Solução encontrada no Standard correspondente, se houver", nullable = true)
+        @Schema(description = "Solution found in the matching Standard, if any", nullable = true)
         String solution,
 
-        @Schema(description = "Como a solução foi encontrada", example = "ROUTINE_AND_TEXT_SCORE")
+        @Schema(description = "How the solution was found", example = "ROUTINE_AND_TEXT_SCORE")
         String method,
 
-        @Schema(description = "Confiança do match, de 0 (nenhuma) a 1 (match exato)", example = "0.82")
+        @Schema(description = "Match confidence, from 0 (none) to 1 (exact match)", example = "0.82")
         double score) {
 
     public static CalledAnalysisResponse from(CalledAnalysis analysis) {

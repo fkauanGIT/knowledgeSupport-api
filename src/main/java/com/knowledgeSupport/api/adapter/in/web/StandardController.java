@@ -28,7 +28,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/standards")
-@Tag(name = "Padrões (Standards)", description = "Catálogo de erros conhecidos e suas soluções — a base de conhecimento do sistema. Persistido em PostgreSQL.")
+@Tag(name = "Standards", description = "Catalog of known errors and their solutions — the system's knowledge base. Persisted in PostgreSQL.")
 public class StandardController {
 
     private final CreateStandardUseCase createStandardUseCase;
@@ -54,19 +54,19 @@ public class StandardController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Cadastra um padrão",
-            description = "Registra um novo erro conhecido e sua solução na base de conhecimento.")
-    @ApiResponse(responseCode = "201", description = "Padrão criado, devolvido com o id gerado")
+    @Operation(summary = "Registers a pattern",
+            description = "Registers a new known error and its solution in the knowledge base.")
+    @ApiResponse(responseCode = "201", description = "Pattern created, returned with the generated id")
     public StandardResponse create(@RequestBody StandardRequest request) {
         Standard created = createStandardUseCase.create(toDomain(request));
         return StandardResponse.from(created);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Busca um padrão pelo id")
+    @Operation(summary = "Fetches a pattern by id")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Padrão encontrado"),
-            @ApiResponse(responseCode = "404", description = "Nenhum padrão com esse id")
+            @ApiResponse(responseCode = "200", description = "Pattern found"),
+            @ApiResponse(responseCode = "404", description = "No pattern with that id")
     })
     public StandardResponse getById(@PathVariable UUID id) {
         return getStandardUseCase.getById(id)
@@ -75,18 +75,18 @@ public class StandardController {
     }
 
     @GetMapping
-    @Operation(summary = "Lista todos os padrões")
-    @ApiResponse(responseCode = "200", description = "Lista de padrões cadastrados (pode ser vazia)")
+    @Operation(summary = "Lists every registered pattern")
+    @ApiResponse(responseCode = "200", description = "List of registered patterns (may be empty)")
     public List<StandardResponse> listAll() {
         return listStandardsUseCase.listAll().stream().map(StandardResponse::from).toList();
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Atualiza um padrão",
-            description = "Substitui os dados do padrão existente pelos enviados no corpo.")
+    @Operation(summary = "Updates a pattern",
+            description = "Replaces the existing pattern's data with what's sent in the body.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Padrão atualizado"),
-            @ApiResponse(responseCode = "404", description = "Nenhum padrão com esse id")
+            @ApiResponse(responseCode = "200", description = "Pattern updated"),
+            @ApiResponse(responseCode = "404", description = "No pattern with that id")
     })
     public StandardResponse update(@PathVariable UUID id, @RequestBody StandardRequest request) {
         Standard updated = updateStandardUseCase.update(id, toDomain(request));
@@ -95,21 +95,21 @@ public class StandardController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Remove um padrão")
+    @Operation(summary = "Removes a pattern")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Padrão removido"),
-            @ApiResponse(responseCode = "404", description = "Nenhum padrão com esse id")
+            @ApiResponse(responseCode = "204", description = "Pattern removed"),
+            @ApiResponse(responseCode = "404", description = "No pattern with that id")
     })
     public void delete(@PathVariable UUID id) {
         deleteStandardUseCase.deleteById(id);
     }
 
     @GetMapping("/{id}/accuracy")
-    @Operation(summary = "Taxa de acerto do padrão, baseada em feedback real",
-            description = "Agrega os feedbacks (POST /api/calleds/{key}/feedback) registrados pra esse Standard.")
+    @Operation(summary = "The pattern's accuracy rate, based on real feedback",
+            description = "Aggregates the feedback (POST /api/calleds/{key}/feedback) recorded for this Standard.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Taxa de acerto"),
-            @ApiResponse(responseCode = "404", description = "Nenhum padrão com esse id")
+            @ApiResponse(responseCode = "200", description = "Accuracy rate"),
+            @ApiResponse(responseCode = "404", description = "No pattern with that id")
     })
     public StandardAccuracyResponse accuracy(@PathVariable UUID id) {
         return StandardAccuracyResponse.from(getStandardAccuracyUseCase.getAccuracy(id));

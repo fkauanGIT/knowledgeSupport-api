@@ -19,12 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Adapter de entrada (canal web). Não tem POST/PUT/DELETE de propósito:
- * chamados nascem no Jira, não na nossa API. Aqui só consultamos.
+ * Inbound adapter (web channel). Deliberately has no POST/PUT/DELETE:
+ * tickets are born in Jira, not in our API. Here we only query.
  */
 @RestController
 @RequestMapping("/api/calleds")
-@Tag(name = "Chamados (Calleds)", description = "Chamados de suporte consultados ao vivo no Jira — somente leitura. O filtro é configurável via JIRA_JQL no .env.")
+@Tag(name = "Calleds", description = "Support tickets queried live from Jira — read-only. The filter is configurable via JIRA_JQL in .env.")
 public class CalledController {
 
     private final ListCalledsUseCase listCalledsUseCase;
@@ -41,9 +41,9 @@ public class CalledController {
     }
 
     @GetMapping
-    @Operation(summary = "Lista os chamados abertos",
-            description = "Consulta a API do Jira (projeto SUP) em tempo real e devolve os chamados já traduzidos para o formato do domínio — sem cache e sem persistência local: o Jira é a fonte da verdade.")
-    @ApiResponse(responseCode = "200", description = "Lista de chamados abertos (pode ser vazia)")
+    @Operation(summary = "Lists open tickets",
+            description = "Queries the Jira API (project SUP) in real time and returns the tickets already translated to the domain format — no cache and no local persistence: Jira is the source of truth.")
+    @ApiResponse(responseCode = "200", description = "List of open tickets (may be empty)")
     public List<CalledResponse> listOpen() {
         return listCalledsUseCase.listOpenCalleds().stream()
                 .map(CalledResponse::from)
@@ -51,26 +51,26 @@ public class CalledController {
     }
 
     @GetMapping("/{key}/analysis")
-    @Operation(summary = "Analisa um chamado e tenta encontrar um Standard correspondente",
-            description = "Busca o chamado no Jira pela key e compara com os Standards cadastrados pela rotina.")
-    @ApiResponse(responseCode = "200", description = "Resultado da análise")
+    @Operation(summary = "Analyzes a ticket and tries to find a matching Standard",
+            description = "Fetches the ticket from Jira by key and compares it against the registered Standards by routine.")
+    @ApiResponse(responseCode = "200", description = "Analysis result")
     public CalledAnalysisResponse analyze(@PathVariable String key) {
         return CalledAnalysisResponse.from(analyzeCalledUseCase.analyze(key));
     }
 
     @GetMapping("/gap-report")
-    @Operation(summary = "Relatório de lacunas: onde cadastrar Standard novo rende mais cobertura",
-            description = "Roda a análise em todos os chamados abertos e agrupa por rotina os que não encontraram Standard (method NONE), ordenado do maior volume pro menor.")
-    @ApiResponse(responseCode = "200", description = "Relatório de lacunas")
+    @Operation(summary = "Gap report: where registering a new Standard yields the most coverage",
+            description = "Runs the analysis over every open ticket and groups by routine the ones that found no Standard (method NONE), sorted from highest volume to lowest.")
+    @ApiResponse(responseCode = "200", description = "Gap report")
     public GapReportResponse gapReport() {
         return GapReportResponse.from(gapReportUseCase.generate());
     }
 
     @PostMapping("/{key}/feedback")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Registra se a sugestão da análise resolveu o chamado",
-            description = "Alimenta a taxa de acerto do Standard (GET /api/standards/{id}/accuracy) com um resultado real, não uma suposição.")
-    @ApiResponse(responseCode = "201", description = "Feedback registrado")
+    @Operation(summary = "Records whether the analysis's suggestion solved the ticket",
+            description = "Feeds the Standard's accuracy rate (GET /api/standards/{id}/accuracy) with a real outcome, not a guess.")
+    @ApiResponse(responseCode = "201", description = "Feedback recorded")
     public FeedbackResponse submitFeedback(@PathVariable String key, @RequestBody FeedbackRequest request) {
         return FeedbackResponse.from(submitFeedbackUseCase.submit(key, request.standardId(), request.resolved()));
     }

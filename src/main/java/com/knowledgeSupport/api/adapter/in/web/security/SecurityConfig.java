@@ -9,10 +9,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * API sem sessão de usuário: cada requisição se autentica sozinha via
- * {@link ApiKeyAuthFilter}, não por login. CSRF não se aplica a esse modelo (não há
- * cookie de sessão pra forjar) e a doc do Swagger fica pública de propósito — protegê-la
- * é responsabilidade do deploy (item 3.8 do BACKLOG.md), não desta config.
+ * API with no user session: every request authenticates itself via
+ * {@link ApiKeyAuthFilter}, not via login. CSRF doesn't apply to this model (there's no
+ * session cookie to forge) and the Swagger docs stay public on purpose — protecting them
+ * is the deploy's responsibility (BACKLOG.md item 3.8), not this config's.
  */
 @Configuration
 @EnableWebSecurity
