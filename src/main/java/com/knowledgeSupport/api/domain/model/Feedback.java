@@ -4,9 +4,9 @@ import java.util.Date;
 import java.util.UUID;
 
 /**
- * Resultado de uma sugestão: o analista confirma se o Standard sugerido resolveu o
- * chamado de verdade. Base pra "taxa de acerto por Standard" (GetStandardAccuracyUseCase) —
- * confiança auditável, diferente de uma IA que só "parece confiante".
+ * Result of a suggestion: the analyst confirms whether the suggested Standard actually
+ * solved the ticket. The basis for "accuracy rate per Standard" (GetStandardAccuracyUseCase) —
+ * auditable confidence, unlike an AI that just "sounds confident".
  */
 public class Feedback {
     private final UUID id;

@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Port de saída: o núcleo declara "preciso de alguém que me forneça chamados".
- * Hoje quem cumpre esse contrato é o JiraCalledAdapter, mas o núcleo não sabe disso.
+ * Outbound port: the core declares "I need someone to provide me with tickets".
+ * Today JiraCalledAdapter fulfills this contract, but the core doesn't know that.
  */
 public interface CalledProviderPort {
     List<Called> fetchOpenCalleds();

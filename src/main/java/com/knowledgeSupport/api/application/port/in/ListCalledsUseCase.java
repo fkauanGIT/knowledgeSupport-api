@@ -5,9 +5,9 @@ import com.knowledgeSupport.api.domain.model.Called;
 import java.util.List;
 
 /**
- * Port de entrada: serviço que o núcleo OFERECE ao mundo.
- * Quem chama: adapters de entrada (CalledController hoje; Chatwoot/scheduler no futuro).
- * Quem implementa: CalledService.
+ * Inbound port: a service the core OFFERS to the world.
+ * Called by: inbound adapters (CalledController today; Chatwoot/scheduler in the future).
+ * Implemented by: CalledService.
  */
 public interface ListCalledsUseCase {
     List<Called> listOpenCalleds();

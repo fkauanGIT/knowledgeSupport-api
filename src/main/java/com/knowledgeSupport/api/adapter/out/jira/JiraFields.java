@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Os campos de uma issue que pedimos ao Jira (query param "fields").
- * "description" chega em ADF (árvore de nós), por isso o tipo JiraDoc.
- * customfield_10432 e customfield_10433 são campos customizados do
- * request type "Erros/Alertas no sistema WINTHOR" (Número Rotina e
- * Nome do Error/Alerta).
+ * The issue fields we ask Jira for (the "fields" query param).
+ * "description" arrives as ADF (a tree of nodes), hence the JiraDoc type.
+ * customfield_10432 and customfield_10433 are custom fields on the
+ * "Errors/Alerts in the WINTHOR system" request type (labeled "Número Rotina"
+ * and "Nome do Error/Alerta" in the actual Jira instance).
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record JiraFields(String summary,

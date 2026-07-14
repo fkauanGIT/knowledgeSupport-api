@@ -18,7 +18,7 @@ public class StandardJpaEntity {
     private UUID id;
     private String standardName;
 
-    // sem limite de 255: o texto acumula variações de sintoma ao longo do tempo (ver LIMITATIONS.md)
+    // no 255 limit: the text accumulates symptom variations over time (see LIMITATIONS.md)
     @Column(columnDefinition = "text")
     private String text;
 

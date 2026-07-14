@@ -18,11 +18,11 @@ jira:
   jql: ${JIRA_JQL:created >= -30d ORDER BY created DESC}
 
 matching:
-  # Score mínimo (0-1) de similaridade de texto para considerar um Standard como sugestão.
+  # Minimum text-similarity score (0-1) for a Standard to be considered a suggestion.
   threshold: ${MATCHING_THRESHOLD:0.4}
 
 security:
-  # Chave enviada no header X-API-KEY por qualquer cliente da API.
+  # Key sent in the X-API-KEY header by any API client.
   api-key: ${API_KEY}
 
 management:
@@ -42,7 +42,7 @@ springdoc:
     display-request-duration: true
   api-docs:
     path: /v3/api-docs
-  # Em produção, desabilite a doc pública descomentando:
+  # In production, disable the public docs by uncommenting:
   # api-docs:
   #   enabled: false
   # swagger-ui:

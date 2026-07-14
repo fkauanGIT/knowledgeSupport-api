@@ -8,10 +8,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * Núcleo: por enquanto só repassa, mas é AQUI que vai morar a regra de negócio
- * central do produto — comparar o errorName/incidentType do Called com os
- * Standards para sugerir a solução padrão (futuro AnalyzeCalledUseCase).
- * Repare: nenhum import de HTTP, Jira ou banco. Só ports e domínio.
+ * Core: for now it just passes through, but this is WHERE the product's central
+ * business rule will live — comparing the Called's errorName/incidentType against the
+ * Standards to suggest the standard solution (future AnalyzeCalledUseCase).
+ * Notice: no import of HTTP, Jira, or the database. Only ports and domain.
  */
 @Service
 public class CalledService implements ListCalledsUseCase {

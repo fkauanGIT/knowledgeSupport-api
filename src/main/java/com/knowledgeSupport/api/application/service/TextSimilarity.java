@@ -9,17 +9,19 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Comparação textual pura (sem Spring, sem I/O): normaliza, tokeniza e mede quanto do
- * texto do chamado está coberto pelo texto do Standard, tolerando erro de digitação.
- * Usada pelo AnalyzeCalledService para pontuar Called x Standard quando a igualdade
- * exata de errorName não resolve.
+ * Pure text comparison (no Spring, no I/O): normalizes, tokenizes and measures how much of
+ * the ticket's text is covered by the Standard's text, tolerating typos.
+ * Used by AnalyzeCalledService to score Called x Standard when exact equality on
+ * errorName doesn't resolve it.
  */
 public final class TextSimilarity {
 
-    // Lista fixa e pequena de propósito: só as palavras mais comuns do PT que não carregam
-    // significado de negócio. Cresce sob demanda, não precisa ser exaustiva.
-    // "nao" fica de fora de propósito: é negação, não ruído — remover mudaria o sentido
-    // ("caixa fecha" x "caixa nao fecha" são problemas opostos, não sinônimos).
+    // Deliberately small, fixed list: only the most common Portuguese words that carry no
+    // business meaning. Grows on demand, doesn't need to be exhaustive. Kept in Portuguese
+    // on purpose — this stopword list matches the language of the real support tickets the
+    // matcher processes, not the language the code is written in (see docs/LIMITATIONS.md).
+    // "nao" is deliberately NOT in this list: it's negation, not noise — removing it would
+    // change the meaning ("caixa fecha" x "caixa nao fecha" are opposite problems, not synonyms).
     private static final Set<String> STOPWORDS_PT = Set.of(
             "a", "o", "as", "os", "de", "do", "da", "dos", "das", "em", "no", "na", "nos", "nas",
             "um", "uma", "uns", "umas", "e", "ou", "que", "com", "sem", "para", "por", "pra",
@@ -30,17 +32,17 @@ public final class TextSimilarity {
 
     private static final LevenshteinDistance LEVENSHTEIN = LevenshteinDistance.getDefaultInstance();
 
-    // Chamado com poucos tokens não tem informação suficiente pra sustentar um containment
-    // score confiável (ex: 1 token batendo por acaso não deveria "cobrir" um Standard inteiro).
-    private static final int MIN_TOKENS_CHAMADO = 3;
+    // A ticket with too few tokens doesn't carry enough information to support a reliable
+    // containment score (e.g. 1 token matching by chance shouldn't "cover" a whole Standard).
+    private static final int MIN_TICKET_TOKENS = 3;
 
     private TextSimilarity() {}
 
     public static String normalize(String value) {
         if (value == null) return "";
-        String semAcentos = Normalizer.normalize(value, Normalizer.Form.NFD)
+        String withoutAccents = Normalizer.normalize(value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "");
-        return semAcentos.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ");
+        return withoutAccents.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ");
     }
 
     public static Set<String> tokenize(String text) {
@@ -52,44 +54,44 @@ public final class TextSimilarity {
     }
 
     /**
-     * Containment score, não Jaccard simétrico: mede quanto do CHAMADO está coberto pelo
-     * texto do Standard (interseção / tokens do chamado), com tolerância a typo. Assimétrico
-     * de propósito — o chamado tende a ser curto e o Standard cresce com o tempo (acumula
-     * variações de sintoma); dividir pela união penalizaria Standards ricos, que é exatamente
-     * o comportamento que queremos incentivar. Resultado entre 0 e 1; textoChamado precisa
-     * vir primeiro, a ordem dos argumentos importa.
+     * Containment score, not symmetric Jaccard: measures how much of the TICKET is covered by
+     * the Standard's text (intersection / ticket tokens), with typo tolerance. Asymmetric on
+     * purpose — the ticket tends to be short and the Standard grows over time (accumulates
+     * symptom variations); dividing by the union would penalize rich Standards, which is
+     * exactly the behavior we want to encourage. Result between 0 and 1; ticketText needs
+     * to come first, argument order matters.
      */
-    public static double score(String textoChamado, String textoStandard) {
-        Set<String> tokensChamado = tokenize(textoChamado);
-        Set<String> tokensStandard = tokenize(textoStandard);
+    public static double score(String ticketText, String standardText) {
+        Set<String> ticketTokens = tokenize(ticketText);
+        Set<String> standardTokens = tokenize(standardText);
 
-        if (tokensChamado.size() < MIN_TOKENS_CHAMADO || tokensStandard.isEmpty()) return 0.0;
+        if (ticketTokens.size() < MIN_TICKET_TOKENS || standardTokens.isEmpty()) return 0.0;
 
-        Set<String> disponiveisStandard = new HashSet<>(tokensStandard);
+        Set<String> availableStandardTokens = new HashSet<>(standardTokens);
         int matches = 0;
-        for (String tokenChamado : tokensChamado) {
-            String encontrado = null;
-            for (String tokenStandard : disponiveisStandard) {
-                if (isFuzzyMatch(tokenChamado, tokenStandard)) {
-                    encontrado = tokenStandard;
+        for (String ticketToken : ticketTokens) {
+            String found = null;
+            for (String standardToken : availableStandardTokens) {
+                if (isFuzzyMatch(ticketToken, standardToken)) {
+                    found = standardToken;
                     break;
                 }
             }
-            if (encontrado != null) {
-                disponiveisStandard.remove(encontrado);
+            if (found != null) {
+                availableStandardTokens.remove(found);
                 matches++;
             }
         }
 
-        return (double) matches / tokensChamado.size();
+        return (double) matches / ticketTokens.size();
     }
 
     private static boolean isFuzzyMatch(String a, String b) {
         if (a.equals(b)) return true;
-        int menor = Math.min(a.length(), b.length());
-        if (menor <= 2) return false; // token curto demais: só aceita igualdade exata
-        int maior = Math.max(a.length(), b.length());
-        int tolerancia = maior <= 4 ? 1 : 2;
-        return LEVENSHTEIN.apply(a, b) <= tolerancia;
+        int shorter = Math.min(a.length(), b.length());
+        if (shorter <= 2) return false; // token too short: only accept exact equality
+        int longer = Math.max(a.length(), b.length());
+        int tolerance = longer <= 4 ? 1 : 2;
+        return LEVENSHTEIN.apply(a, b) <= tolerance;
     }
 }

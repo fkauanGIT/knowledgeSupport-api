@@ -14,10 +14,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Adapter de saída: implementa CalledProviderPort falando o idioma do Jira.
- * Tudo que é "assunto Jira" (URL, token, endpoint, JSON) mora aqui.
- * Equivalente ao StandardPersistenceAdapter — só muda o fornecedor:
- * lá é o PostgreSQL, aqui é a API do Jira.
+ * Outbound adapter: implements CalledProviderPort speaking Jira's language.
+ * Everything that's "Jira business" (URL, token, endpoint, JSON) lives here.
+ * Equivalent to StandardPersistenceAdapter — only the provider changes:
+ * there it's PostgreSQL, here it's the Jira API.
  */
 @Component
 public class JiraCalledAdapter implements CalledProviderPort {
@@ -25,7 +25,7 @@ public class JiraCalledAdapter implements CalledProviderPort {
     private static final Logger log = LoggerFactory.getLogger(JiraCalledAdapter.class);
     private static final String FIELDS = "summary,description,status,issuetype,reporter,created,duedate,updated,customfield_10432,customfield_10433";
     private static final int MAX_RESULTS_PER_PAGE = 50;
-    private static final int MAX_PAGES = 20; // trava de segurança: 20 x 50 = 1000 chamados por listagem
+    private static final int MAX_PAGES = 20; // safety cap: 20 x 50 = 1000 tickets per listing
     private static final int MAX_RETRIES_429 = 3;
 
     private final RestClient restClient;
@@ -84,11 +84,11 @@ public class JiraCalledAdapter implements CalledProviderPort {
                 return fetchPage(pageToken);
             } catch (HttpClientErrorException.TooManyRequests e) {
                 if (attempt == MAX_RETRIES_429) {
-                    log.warn("Jira retornou 429 (rate limit) {} vezes seguidas; devolvendo os chamados ja coletados ate aqui.", attempt);
+                    log.warn("Jira returned 429 (rate limit) {} times in a row; returning the tickets collected so far.", attempt);
                     return null;
                 }
                 long waitMillis = retryAfterMillis(e).orElse(1000L * attempt);
-                log.warn("Jira retornou 429 (rate limit), tentativa {}/{}; aguardando {}ms.", attempt, MAX_RETRIES_429, waitMillis);
+                log.warn("Jira returned 429 (rate limit), attempt {}/{}; waiting {}ms.", attempt, MAX_RETRIES_429, waitMillis);
                 sleep(waitMillis);
             }
         }

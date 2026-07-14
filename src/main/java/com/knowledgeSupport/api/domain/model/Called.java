@@ -100,9 +100,9 @@ public class Called {
     }
 
     /**
-     * Called tem 13 campos: construtor posicional era fonte de bug silencioso
-     * (trocar dois Date/String de lugar não dá erro de compilação). O builder
-     * nomeia cada campo no call site.
+     * Called has 13 fields: a positional constructor was a source of silent bugs
+     * (swapping two Date/String arguments compiles fine). The builder
+     * names each field at the call site.
      */
     public static class Builder {
         private final Called called = new Called();

@@ -18,14 +18,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Roda a mesma cascata do AnalyzeCalledService em todos os chamados abertos, mas busca
- * Called/Standard UMA vez só (não por chamado) — evita N+1 no Jira e no banco quando o
- * relatório roda sobre uma lista grande.
+ * Runs the same cascade as AnalyzeCalledService over every open ticket, but fetches
+ * Called/Standard only ONCE (not per ticket) — avoids N+1 against Jira and the database when
+ * the report runs over a large list.
  */
 @Service
 public class GapReportService implements GapReportUseCase {
 
-    private static final int MAX_EXEMPLOS_POR_ROTINA = 3;
+    private static final int MAX_EXAMPLES_PER_ROUTINE = 3;
 
     private final CalledProviderPort calledProviderPort;
     private final StandardRepositoryPort standardRepositoryPort;
@@ -44,33 +44,33 @@ public class GapReportService implements GapReportUseCase {
         List<Called> calleds = calledProviderPort.fetchOpenCalleds();
         List<Standard> standards = standardRepositoryPort.findAll();
 
-        List<Called> semMatch = calleds.stream()
+        List<Called> withoutMatch = calleds.stream()
                 .map(called -> matcher.match(called, standards))
                 .filter(analysis -> "NONE".equals(analysis.getMethod().getName()))
                 .map(CalledAnalysis::getCalled)
                 .toList();
 
-        // Collectors.groupingBy rejeita chave nula (NullPointerException) — routineNumber
-        // pode ser null (chamado sem rotina preenchida no Jira), então agrupa por Optional.
-        Map<Optional<Integer>, List<Called>> porRotina = semMatch.stream()
+        // Collectors.groupingBy rejects a null key (NullPointerException) — routineNumber
+        // can be null (a ticket with no routine filled in on Jira), so group by Optional.
+        Map<Optional<Integer>, List<Called>> byRoutine = withoutMatch.stream()
                 .collect(Collectors.groupingBy(called -> Optional.ofNullable(called.getRoutineNumber())));
 
-        List<RoutineGap> lacunas = porRotina.entrySet().stream()
-                .map(entry -> toRoutineGap(entry.getKey().orElse(null), entry.getValue(), semMatch.size()))
-                .sorted(Comparator.comparingInt(RoutineGap::getQuantidade).reversed())
+        List<RoutineGap> gaps = byRoutine.entrySet().stream()
+                .map(entry -> toRoutineGap(entry.getKey().orElse(null), entry.getValue(), withoutMatch.size()))
+                .sorted(Comparator.comparingInt(RoutineGap::getCount).reversed())
                 .toList();
 
-        return new GapReport(calleds.size(), semMatch.size(), lacunas);
+        return new GapReport(calleds.size(), withoutMatch.size(), gaps);
     }
 
-    private RoutineGap toRoutineGap(Integer routineNumber, List<Called> chamadosDaRotina, int totalSemMatch) {
-        double percentual = totalSemMatch == 0 ? 0.0 : (100.0 * chamadosDaRotina.size() / totalSemMatch);
-        List<String> exemplos = chamadosDaRotina.stream()
+    private RoutineGap toRoutineGap(Integer routineNumber, List<Called> routineCalleds, int totalWithoutMatch) {
+        double percentage = totalWithoutMatch == 0 ? 0.0 : (100.0 * routineCalleds.size() / totalWithoutMatch);
+        List<String> examples = routineCalleds.stream()
                 .map(Called::getTitleCalled)
-                .filter(titulo -> titulo != null && !titulo.isBlank())
+                .filter(title -> title != null && !title.isBlank())
                 .distinct()
-                .limit(MAX_EXEMPLOS_POR_ROTINA)
+                .limit(MAX_EXAMPLES_PER_ROUTINE)
                 .toList();
-        return new RoutineGap(routineNumber, chamadosDaRotina.size(), percentual, exemplos);
+        return new RoutineGap(routineNumber, routineCalleds.size(), percentage, examples);
     }
 }

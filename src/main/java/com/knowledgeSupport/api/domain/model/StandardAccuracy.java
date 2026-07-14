@@ -6,7 +6,7 @@ public class StandardAccuracy {
     private final UUID standardId;
     private final int totalFeedbacks;
     private final int resolvedCount;
-    private final double accuracyRate; // 0-1; 0 quando totalFeedbacks == 0 (sem dado, não "0% de acerto")
+    private final double accuracyRate; // 0-1; 0 when totalFeedbacks == 0 (no data, not "0% accuracy")
 
     public StandardAccuracy(UUID standardId, int totalFeedbacks, int resolvedCount, double accuracyRate) {
         this.standardId = standardId;

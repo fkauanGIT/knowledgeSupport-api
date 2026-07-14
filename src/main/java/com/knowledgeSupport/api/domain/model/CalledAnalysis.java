@@ -2,7 +2,7 @@ package com.knowledgeSupport.api.domain.model;
 
 public class CalledAnalysis {
     private final Called called;
-    private final Standard matchedStandard; // null se não achou
+    private final Standard matchedStandard; // null if none was found
     private final MatchMethod method;
 
     public CalledAnalysis(Called called, Standard matchedStandard, MatchMethod method) {

@@ -5,20 +5,20 @@ import java.util.UUID;
 public class Requester {
     private UUID id;
     private String requesterName;
-    private Integer filialRequester;
+    private Integer requesterBranch;
     private String requesterNumber;
 
     protected Requester() {}
 
-    public Requester(UUID id, String requesterName, Integer filialRequester, String requesterNumber) {
+    public Requester(UUID id, String requesterName, Integer requesterBranch, String requesterNumber) {
         this.id = id;
         this.requesterName = requesterName;
-        this.filialRequester = filialRequester;
+        this.requesterBranch = requesterBranch;
         this.requesterNumber = requesterNumber;
     }
 
-    public Requester(String requesterName, Integer filialRequester, String requesterNumber) {
-        this(null, requesterName, filialRequester, requesterNumber);
+    public Requester(String requesterName, Integer requesterBranch, String requesterNumber) {
+        this(null, requesterName, requesterBranch, requesterNumber);
     }
 
     public UUID getId() {
@@ -33,12 +33,12 @@ public class Requester {
         this.requesterName = requesterName;
     }
 
-    public Integer getFilialRequester() {
-        return filialRequester;
+    public Integer getRequesterBranch() {
+        return requesterBranch;
     }
 
-    public void setFilialRequester(Integer filialRequester) {
-        this.filialRequester = filialRequester;
+    public void setRequesterBranch(Integer requesterBranch) {
+        this.requesterBranch = requesterBranch;
     }
 
     public String getRequesterNumber() {
@@ -54,7 +54,7 @@ public class Requester {
         final StringBuffer sb = new StringBuffer("Requester{");
         sb.append("id=").append(id);
         sb.append(", requesterName='").append(requesterName).append('\'');
-        sb.append(", filialRequester=").append(filialRequester);
+        sb.append(", requesterBranch=").append(requesterBranch);
         sb.append(", requesterNumber='").append(requesterNumber).append('\'');
         sb.append('}');
         return sb.toString();

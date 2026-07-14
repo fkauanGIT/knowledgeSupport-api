@@ -10,10 +10,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A cascata de match em si (exato -> score por rotina -> score geral -> NONE), sem Spring
- * e sem ports: recebe um Called já buscado e a lista de Standards já carregada. Extraído de
- * AnalyzeCalledService pra ser reaproveitado por quem precisa rodar a mesma cascata em lote
- * (GapReportService) sem pagar o custo de re-buscar o Called/Standards a cada chamado.
+ * The matching cascade itself (exact -> score by routine -> overall score -> NONE), with no
+ * Spring and no ports: receives an already-fetched Called and the already-loaded list of
+ * Standards. Extracted from AnalyzeCalledService so it can be reused by whoever needs to run
+ * the same cascade in bulk (GapReportService) without paying the cost of re-fetching the
+ * Called/Standards on every ticket.
  */
 public class CalledStandardMatcher {
 
@@ -24,62 +25,62 @@ public class CalledStandardMatcher {
     }
 
     public CalledAnalysis match(Called called, List<Standard> standards) {
-        List<Standard> candidatos = standards.stream()
-                .filter(CalledStandardMatcher::temSolucao)
+        List<Standard> candidates = standards.stream()
+                .filter(CalledStandardMatcher::hasSolution)
                 .toList();
 
-        Optional<Standard> matchExato = candidatos.stream()
-                .filter(standard -> mesmaRotinaEMesmoErro(called, standard))
+        Optional<Standard> exactMatch = candidates.stream()
+                .filter(standard -> sameRoutineAndSameError(called, standard))
                 .findFirst();
-        if (matchExato.isPresent()) {
-            return new CalledAnalysis(called, matchExato.get(), MatchMethod.of("ROUTINE_AND_ERROR_NAME", 1.0));
+        if (exactMatch.isPresent()) {
+            return new CalledAnalysis(called, exactMatch.get(), MatchMethod.of("ROUTINE_AND_ERROR_NAME", 1.0));
         }
 
-        // routineNumber é filtro (reduz candidatos), não par obrigatório: se restringir a busca
-        // e ainda sobrar candidato, prioriza esse subconjunto antes de abrir pra base inteira.
-        List<Standard> candidatosDaRotina = candidatos.stream()
-                .filter(standard -> mesmaRotina(called, standard))
+        // routineNumber is a filter (reduces candidates), not a mandatory pair: if it narrows
+        // the search and candidates remain, prioritize that subset before opening up to the whole base.
+        List<Standard> routineCandidates = candidates.stream()
+                .filter(standard -> sameRoutine(called, standard))
                 .toList();
 
-        if (!candidatosDaRotina.isEmpty()) {
-            Optional<CalledAnalysis> porRotinaEScore = melhorPorScore(called, candidatosDaRotina, "ROUTINE_AND_TEXT_SCORE");
-            if (porRotinaEScore.isPresent()) {
-                return porRotinaEScore.get();
+        if (!routineCandidates.isEmpty()) {
+            Optional<CalledAnalysis> byRoutineAndScore = bestByScore(called, routineCandidates, "ROUTINE_AND_TEXT_SCORE");
+            if (byRoutineAndScore.isPresent()) {
+                return byRoutineAndScore.get();
             }
         }
 
-        Optional<CalledAnalysis> porScore = melhorPorScore(called, candidatos, "TEXT_SCORE");
-        return porScore.orElseGet(() -> new CalledAnalysis(called, null, MatchMethod.none()));
+        Optional<CalledAnalysis> byScore = bestByScore(called, candidates, "TEXT_SCORE");
+        return byScore.orElseGet(() -> new CalledAnalysis(called, null, MatchMethod.none()));
     }
 
-    private Optional<CalledAnalysis> melhorPorScore(Called called, List<Standard> candidatos, String nomeDoMetodo) {
-        String textoChamado = String.join(" ",
+    private Optional<CalledAnalysis> bestByScore(Called called, List<Standard> candidates, String methodName) {
+        String ticketText = String.join(" ",
                 nullToEmpty(called.getTitleCalled()), nullToEmpty(called.getDescriptionCalled()), nullToEmpty(called.getErrorName()));
 
-        return candidatos.stream()
+        return candidates.stream()
                 .map(standard -> {
-                    String textoStandard = String.join(" ", nullToEmpty(standard.getStandardName()), nullToEmpty(standard.getText()));
-                    double score = TextSimilarity.score(textoChamado, textoStandard);
+                    String standardText = String.join(" ", nullToEmpty(standard.getStandardName()), nullToEmpty(standard.getText()));
+                    double score = TextSimilarity.score(ticketText, standardText);
                     return new ScoredStandard(standard, score);
                 })
                 .filter(scored -> scored.score() >= threshold)
                 .max(Comparator.comparingDouble(ScoredStandard::score))
-                .map(scored -> new CalledAnalysis(called, scored.standard(), MatchMethod.of(nomeDoMetodo, scored.score())));
+                .map(scored -> new CalledAnalysis(called, scored.standard(), MatchMethod.of(methodName, scored.score())));
     }
 
-    private boolean mesmaRotina(Called called, Standard standard) {
+    private boolean sameRoutine(Called called, Standard standard) {
         return called.getRoutineNumber() != null && called.getRoutineNumber().equals(standard.getRoutineNumber());
     }
 
-    private boolean mesmaRotinaEMesmoErro(Called called, Standard standard) {
-        boolean erroBate = called.getErrorName() != null
+    private boolean sameRoutineAndSameError(Called called, Standard standard) {
+        boolean errorMatches = called.getErrorName() != null
                 && standard.getStandardName() != null
                 && TextSimilarity.normalize(called.getErrorName()).equals(TextSimilarity.normalize(standard.getStandardName()));
 
-        return mesmaRotina(called, standard) && erroBate;
+        return sameRoutine(called, standard) && errorMatches;
     }
 
-    private static boolean temSolucao(Standard standard) {
+    private static boolean hasSolution(Standard standard) {
         return standard.getResult() != null && !standard.getResult().isBlank();
     }
 
