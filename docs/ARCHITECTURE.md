@@ -250,4 +250,4 @@ Client ▶ StandardController (StandardRequest → Standard)
 - [x] `GapReportUseCase` (`GET /api/calleds/gap-report`) — aggregates unmatched tickets by routine, to show where registering a Standard yields the most coverage.
 - [x] `SubmitFeedbackUseCase`/`GetStandardAccuracyUseCase` (`POST /api/calleds/{key}/feedback`, `GET /api/standards/{id}/accuracy`) — real "did it solve it or not" feedback becomes an auditable accuracy rate per Standard.
 - [x] `Called`/`Standard` gained a builder — a positional constructor with 10+ fields was a source of silent bugs.
-- [ ] Real `IncidentType`/`FilterCategory` — `IncidentType` already derives from Jira's `issuetype`; `FilterCategory` is still fixed at `PENDING` (no reliable signal for SUPPORT/INFRASTRUCTURE/DEVELOPMENT yet, see `LIMITATIONS.md`).
+- [ ] Real `IncidentType`/`FilterCategory` — `IncidentType` already derives from Jira's `issuetype`; `FilterCategory` is still fixed at `SUPPORT` (no reliable signal to tell INFRASTRUCTURE/DEVELOPMENT apart yet, see `LIMITATIONS.md`).

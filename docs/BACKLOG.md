@@ -109,8 +109,9 @@ API key authentication · automatic versioning.
       parameters are a source of silent bugs (swapping arguments of the same type).
       Setters removed at the same time (nothing outside the class used them).
 - [x] **3.7 Real `IncidentType`/`FilterCategory`** — `IncidentType` now derives from Jira's
-      `issuetype`. **`FilterCategory` is still fixed at PENDING** — we haven't found a
-      reliable signal in the available fields to derive SUPPORT/INFRASTRUCTURE/DEVELOPMENT;
+      `issuetype`. **`FilterCategory` defaults to SUPPORT** (every ticket that reaches this
+      system today is support) — we haven't found a
+      reliable signal in the available fields to tell INFRASTRUCTURE/DEVELOPMENT apart;
       it needs a business decision about which Jira field to use (see `LIMITATIONS.md`).
 - [ ] **3.8 Deploy** — package it (Dockerfile), per-environment variables, decide where
       to host it; restrict Swagger/actuator in production.

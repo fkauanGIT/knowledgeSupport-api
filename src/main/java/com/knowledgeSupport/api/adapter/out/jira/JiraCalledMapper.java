@@ -44,11 +44,12 @@ public final class JiraCalledMapper {
                 .descriptionCalled(extractText(fields.description()))
                 .errorName(stripTimestampPrefix(extractText(fields.errorName()))) // customfield_10433
                 .incidentType(incidentTypeFrom(fields.issuetype()))
-                // FilterCategory (SUPPORT/INFRASTRUCTURE/DEVELOPMENT/PENDING) has no reliable
-                // signal in the fields Jira returns today (status is workflow progress,
-                // not a work category). Stays PENDING until a real field exists for this
+                // FilterCategory (SUPPORT/INFRASTRUCTURE/DEVELOPMENT) has no reliable signal
+                // in the fields Jira returns today (status is workflow progress, not a work
+                // category). Every ticket that reaches this system today is support, so it
+                // defaults to SUPPORT until a real field exists to tell the categories apart
                 // — see docs/LIMITATIONS.md.
-                .filterCategory(FilterCategory.PENDING)
+                .filterCategory(FilterCategory.SUPPORT)
                 .status(fields.status() == null ? null : fields.status().name())
                 .requester(requester)
                 .createdAt(parse(fields.created(), JIRA_DATETIME))
