@@ -89,7 +89,10 @@ com.knowledgeSupport.api
     │       ├── RoutineGapResponse.java
     │       ├── FeedbackRequest.java
     │       ├── FeedbackResponse.java
-    │       └── GlobalExceptionHandler.java   # @RestControllerAdvice: NoSuchElementException -> 404
+    │       ├── GlobalExceptionHandler.java   # @RestControllerAdvice: NoSuchElementException -> 404
+    │       └── security/
+    │           ├── ApiKeyAuthFilter.java     # valida header X-API-KEY contra .env
+    │           └── SecurityConfig.java       # @EnableWebSecurity: exige a chave, exceto Swagger/health
     └── out/                              # quem o sistema CHAMA
         ├── persistence/                  # canal PostgreSQL (via JPA)
         │   ├── StandardPersistenceAdapter.java  # implements StandardRepositoryPort

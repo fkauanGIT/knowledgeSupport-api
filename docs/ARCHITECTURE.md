@@ -207,6 +207,7 @@ Cliente ▶ StandardController (StandardRequest → Standard)
 | `Called`/`Standard` com builder, sem setters | Construtor posicional de 10+ parâmetros do mesmo tipo (`String, String, String, ...`) é fonte de bug silencioso — trocar dois argumentos de lugar compila e não dá erro nenhum. Builder nomeia cada campo no call site. Setters removidos porque nada fora da própria classe os usava — checado antes de tirar. |
 | Rotina e nome do erro vêm estruturados do Jira | O formulário do JSM tem campos obrigatórios (custom fields `customfield_10432`/`10433`), lidos pelo adapter e mapeados para `Called.routineNumber`/`errorName`. Extração por regex da descrição é fallback, não fonte primária. |
 | Versionamento automático | Conventional Commits + Release Please. Ver [CONTRIBUTING.md](../CONTRIBUTING.md). |
+| Autenticação por API key estática (`X-API-KEY`), não JWT | Não há usuários fazendo login hoje — os consumidores são o webhook do Jira e chamadas máquina-a-máquina. JWT existe pra resolver identidade/expiração de sessão de usuário, que não é o problema aqui; uma chave secreta compartilhada (`ApiKeyAuthFilter`, `SecurityConfig`) resolve com menos código e sem dependência nova. Reavaliar se o item 2.6 (frontend com usuários) sair do papel. |
 
 ## Padrões de projeto presentes
 
