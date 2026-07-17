@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v1.0.0...v1.1.0) (2026-07-17)
+
+
+### Features
+
+* configure Jira token at runtime via /api/settings/jira ([3c35a51](https://github.com/fkauanGIT/knowledgeSupport-api/commit/3c35a51161a45a813aed096e28843499f14d9dac))
+
 ## [1.0.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v0.7.0...v1.0.0) (2026-07-14)
 
 
