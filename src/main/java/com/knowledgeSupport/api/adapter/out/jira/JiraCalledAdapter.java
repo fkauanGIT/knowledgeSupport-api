@@ -4,7 +4,6 @@ import com.knowledgeSupport.api.application.port.out.CalledProviderPort;
 import com.knowledgeSupport.api.domain.model.Called;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -28,18 +27,38 @@ public class JiraCalledAdapter implements CalledProviderPort {
     private static final int MAX_PAGES = 20; // safety cap: 20 x 50 = 1000 tickets per listing
     private static final int MAX_RETRIES_429 = 3;
 
-    private final RestClient restClient;
-    private final String jql;
+    private final JiraSettingsStore settingsStore;
 
-    public JiraCalledAdapter(@Value("${jira.base-url}") String baseUrl,
-                             @Value("${jira.email}") String email,
-                             @Value("${jira.api-token}") String apiToken,
-                             @Value("${jira.jql:created >= -30d ORDER BY created DESC}") String jql) {
-        this.restClient = RestClient.builder()
-                .baseUrl(baseUrl)
-                .defaultHeaders(headers -> headers.setBasicAuth(email, apiToken))
-                .build();
-        this.jql = jql;
+    // Cache do RestClient: reconstruído só quando as credenciais mudam (hot-swap do token).
+    private volatile JiraCredentials cachedCredentials;
+    private volatile RestClient cachedClient;
+
+    public JiraCalledAdapter(JiraSettingsStore settingsStore) {
+        this.settingsStore = settingsStore;
+    }
+
+    /**
+     * Devolve um RestClient alinhado com as credenciais atuais do store, reconstruindo-o
+     * apenas quando elas mudaram (ex.: token renovado via PUT /api/settings/jira).
+     */
+    private RestClient restClient() {
+        JiraCredentials credentials = settingsStore.current();
+        if (cachedClient == null || !credentials.equals(cachedCredentials)) {
+            synchronized (this) {
+                if (cachedClient == null || !credentials.equals(cachedCredentials)) {
+                    cachedClient = RestClient.builder()
+                            .baseUrl(credentials.baseUrl())
+                            .defaultHeaders(headers -> headers.setBasicAuth(credentials.email(), credentials.apiToken()))
+                            .build();
+                    cachedCredentials = credentials;
+                }
+            }
+        }
+        return cachedClient;
+    }
+
+    private String jql() {
+        return settingsStore.current().jql();
     }
 
     @Override
@@ -67,7 +86,7 @@ public class JiraCalledAdapter implements CalledProviderPort {
     @Override
     public Optional<Called> fetchByKey(String key) {
         try {
-            JiraIssuePayload issue = restClient.get()
+            JiraIssuePayload issue = restClient().get()
                     .uri("/rest/api/3/issue/{key}?fields=" + FIELDS, key)
                     .retrieve()
                     .body(JiraIssuePayload.class);
@@ -96,10 +115,10 @@ public class JiraCalledAdapter implements CalledProviderPort {
     }
 
     private JiraSearchResponse fetchPage(String pageToken) {
-        return restClient.get()
+        return restClient().get()
                 .uri(uriBuilder -> {
                     uriBuilder.path("/rest/api/3/search/jql")
-                            .queryParam("jql", jql)
+                            .queryParam("jql", jql())
                             .queryParam("fields", FIELDS)
                             .queryParam("maxResults", MAX_RESULTS_PER_PAGE);
                     if (pageToken != null) {

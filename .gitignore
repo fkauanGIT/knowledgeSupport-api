@@ -36,3 +36,6 @@ build/
 .vscode/
 n*.bak
 *.bak
+
+# Runtime override das credenciais do Jira (contém token — nunca versionar)
+jira-settings.json

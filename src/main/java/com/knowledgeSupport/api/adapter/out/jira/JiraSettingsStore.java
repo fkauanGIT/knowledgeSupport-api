@@ -1,0 +1,100 @@
+package com.knowledgeSupport.api.adapter.out.jira;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+
+/**
+ * Fonte única das credenciais do Jira em tempo de execução.
+ *
+ * <p>Por que existe: antes o token vinha só do {@code .env} via {@code @Value} e era
+ * "queimado" no construtor do {@link JiraCalledAdapter}. Quando o token do Atlassian
+ * expirava, era preciso editar o arquivo e reiniciar a aplicação. Este store torna as
+ * credenciais mutáveis: o valor do {@code .env} é apenas a semente inicial e pode ser
+ * sobrescrito em runtime (via {@code PUT /api/settings/jira}), com o override persistido
+ * em disco para sobreviver a reinícios.</p>
+ *
+ * <p>Precedência na inicialização: se existir o arquivo de override, ele vence o
+ * {@code .env} (foi o último valor definido pelo operador). Caso contrário, usa o
+ * {@code .env}.</p>
+ */
+@Component
+public class JiraSettingsStore {
+
+    private static final Logger log = LoggerFactory.getLogger(JiraSettingsStore.class);
+
+    private final Path storePath;
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final AtomicReference<JiraCredentials> current;
+
+    public JiraSettingsStore(@Value("${jira.base-url:}") String baseUrl,
+                             @Value("${jira.email:}") String email,
+                             @Value("${jira.api-token:}") String apiToken,
+                             @Value("${jira.jql:created >= -30d ORDER BY created DESC}") String jql,
+                             @Value("${jira.settings-file:./jira-settings.json}") String settingsFile) {
+        this.storePath = Path.of(settingsFile);
+        JiraCredentials fromEnv = new JiraCredentials(baseUrl, email, apiToken, jql);
+        Optional<JiraCredentials> override = loadOverride();
+        this.current = new AtomicReference<>(override.orElse(fromEnv));
+        override.ifPresent(c ->
+                log.info("Credenciais do Jira carregadas do override em disco ({}).", storePath.toAbsolutePath()));
+    }
+
+    /** Snapshot atual das credenciais. Nunca é null. */
+    public JiraCredentials current() {
+        return current.get();
+    }
+
+    /**
+     * Atualiza as credenciais e persiste o override em disco.
+     * Campos em branco/nulos preservam o valor atual — em especial o token pode ser
+     * omitido para trocar só a URL/JQL sem reenviar o segredo.
+     */
+    public synchronized JiraCredentials update(String baseUrl, String email, String apiToken, String jql) {
+        JiraCredentials prev = current.get();
+        JiraCredentials next = new JiraCredentials(
+                keepIfBlank(baseUrl, prev.baseUrl()),
+                keepIfBlank(email, prev.email()),
+                keepIfBlank(apiToken, prev.apiToken()),
+                keepIfBlank(jql, prev.jql()));
+        current.set(next);
+        persist(next);
+        return next;
+    }
+
+    private static String keepIfBlank(String incoming, String fallback) {
+        return (incoming == null || incoming.isBlank()) ? fallback : incoming;
+    }
+
+    private Optional<JiraCredentials> loadOverride() {
+        try {
+            if (!Files.exists(storePath)) {
+                return Optional.empty();
+            }
+            return Optional.of(mapper.readValue(Files.readAllBytes(storePath), JiraCredentials.class));
+        } catch (IOException e) {
+            log.warn("Não foi possível ler o override de credenciais do Jira em {}: {}", storePath, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private void persist(JiraCredentials credentials) {
+        try {
+            Path parent = storePath.toAbsolutePath().getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.write(storePath, mapper.writeValueAsBytes(credentials));
+        } catch (IOException e) {
+            log.error("Falha ao persistir as credenciais do Jira em {}: {}", storePath, e.getMessage());
+        }
+    }
+}
