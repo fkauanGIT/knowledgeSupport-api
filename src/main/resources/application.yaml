@@ -16,6 +16,10 @@ jira:
   email: ${JIRA_EMAIL}
   api-token: ${JIRA_API_TOKEN}
   jql: ${JIRA_JQL:created >= -30d ORDER BY created DESC}
+  # Opcional (AAAA-MM-DD). Quando setado, loga um aviso no boot se faltarem <=30 dias
+  # para expirar (ou se já tiver expirado). O Jira não expõe essa data via API para
+  # o próprio dono do token, então precisa ser informada manualmente.
+  api-token-expires-at: ${JIRA_API_TOKEN_EXPIRES_AT:}
 
 matching:
   # Minimum text-similarity score (0-1) for a Standard to be considered a suggestion.

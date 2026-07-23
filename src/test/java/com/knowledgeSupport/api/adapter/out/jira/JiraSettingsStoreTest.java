@@ -13,7 +13,7 @@ class JiraSettingsStoreTest {
     private static final String JQL = "created >= -30d ORDER BY created DESC";
 
     private JiraSettingsStore storeAt(Path file, String baseUrl, String email, String token) {
-        return new JiraSettingsStore(baseUrl, email, token, JQL, file.toString());
+        return new JiraSettingsStore(baseUrl, email, token, JQL, "", file.toString());
     }
 
     @Test
