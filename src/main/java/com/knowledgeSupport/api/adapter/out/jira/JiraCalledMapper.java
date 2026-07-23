@@ -52,6 +52,7 @@ public final class JiraCalledMapper {
                 .filterCategory(FilterCategory.SUPPORT)
                 .status(fields.status() == null ? null : fields.status().name())
                 .requester(requester)
+                .assigneeName(fields.assignee() == null ? null : fields.assignee().displayName())
                 .createdAt(parse(fields.created(), JIRA_DATETIME))
                 .deadline(parse(fields.duedate(), JIRA_DATE))
                 .updateAt(parse(fields.updated(), JIRA_DATETIME))

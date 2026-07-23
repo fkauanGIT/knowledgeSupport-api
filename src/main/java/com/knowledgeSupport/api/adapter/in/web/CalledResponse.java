@@ -44,6 +44,9 @@ public record CalledResponse(
         @Schema(description = "Name of whoever opened the ticket (reporter in Jira)", example = "Francisco Kauan")
         String requesterName,
 
+        @Schema(description = "Name of whoever the ticket is assigned to in Jira, if any", nullable = true, example = "Francisco Kauan")
+        String assigneeName,
+
         @Schema(description = "Creation date in Jira")
         Date createdAt,
 
@@ -64,6 +67,7 @@ public record CalledResponse(
                 called.getFilterCategory(),
                 called.getStatus(),
                 called.getRequester() == null ? null : called.getRequester().getRequesterName(),
+                called.getAssigneeName(),
                 called.getCreatedAt(),
                 called.getDeadline(),
                 called.getUpdateAt()

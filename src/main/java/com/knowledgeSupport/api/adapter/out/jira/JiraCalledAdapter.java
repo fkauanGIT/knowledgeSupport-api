@@ -22,7 +22,7 @@ import java.util.Optional;
 public class JiraCalledAdapter implements CalledProviderPort {
 
     private static final Logger log = LoggerFactory.getLogger(JiraCalledAdapter.class);
-    private static final String FIELDS = "summary,description,status,issuetype,reporter,created,duedate,updated,customfield_10432,customfield_10433";
+    private static final String FIELDS = "summary,description,status,issuetype,reporter,assignee,created,duedate,updated,customfield_10432,customfield_10433";
     private static final int MAX_RESULTS_PER_PAGE = 50;
     private static final int MAX_PAGES = 20; // safety cap: 20 x 50 = 1000 tickets per listing
     private static final int MAX_RETRIES_429 = 3;
