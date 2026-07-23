@@ -1,6 +1,7 @@
 package com.knowledgeSupport.api.application.port.in;
 
 import com.knowledgeSupport.api.domain.model.Called;
+import com.knowledgeSupport.api.domain.model.CalledFilter;
 
 import java.util.List;
 
@@ -10,5 +11,5 @@ import java.util.List;
  * Implemented by: CalledService.
  */
 public interface ListCalledsUseCase {
-    List<Called> listOpenCalleds();
+    List<Called> listOpenCalleds(CalledFilter filter);
 }

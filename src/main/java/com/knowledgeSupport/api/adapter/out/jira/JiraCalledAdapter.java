@@ -2,6 +2,7 @@ package com.knowledgeSupport.api.adapter.out.jira;
 
 import com.knowledgeSupport.api.application.port.out.CalledProviderPort;
 import com.knowledgeSupport.api.domain.model.Called;
+import com.knowledgeSupport.api.domain.model.CalledFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -11,6 +12,8 @@ import org.springframework.web.client.RestClient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Outbound adapter: implements CalledProviderPort speaking Jira's language.
@@ -26,6 +29,7 @@ public class JiraCalledAdapter implements CalledProviderPort {
     private static final int MAX_RESULTS_PER_PAGE = 50;
     private static final int MAX_PAGES = 20; // safety cap: 20 x 50 = 1000 tickets per listing
     private static final int MAX_RETRIES_429 = 3;
+    private static final Pattern ORDER_BY = Pattern.compile("(?i)\\border\\s+by\\b");
 
     private final JiraSettingsStore settingsStore;
 
@@ -57,17 +61,60 @@ public class JiraCalledAdapter implements CalledProviderPort {
         return cachedClient;
     }
 
-    private String jql() {
-        return settingsStore.current().jql();
+    /**
+     * Layers the filter's clauses (created window, only-open) on top of whatever JQL is
+     * already configured, instead of replacing it — so "no filter" keeps returning exactly
+     * what the configured JQL returns today (full history), and a filter only narrows it.
+     * Has to slice the configured JQL at "ORDER BY" first, since new AND-clauses can't be
+     * appended after an ORDER BY without breaking the query.
+     */
+    private String buildJql(CalledFilter filter) {
+        String base = settingsStore.current().jql();
+        Matcher matcher = ORDER_BY.matcher(base);
+
+        String where;
+        String orderBy;
+        if (matcher.find()) {
+            where = base.substring(0, matcher.start()).trim();
+            orderBy = base.substring(matcher.start()).trim();
+        } else {
+            where = base.trim();
+            orderBy = "";
+        }
+
+        List<String> clauses = new ArrayList<>();
+        if (!where.isEmpty()) {
+            clauses.add("(" + where + ")");
+        }
+        if (filter.createdFrom() != null) {
+            clauses.add("created >= \"" + filter.createdFrom() + "\"");
+        }
+        if (filter.createdTo() != null) {
+            // <= a data informada não bastaria: em Jira "created <= 2026-01-10" corta às
+            // 00:00 daquele dia. Usar "<" com o dia seguinte inclui o dia inteiro.
+            clauses.add("created < \"" + filter.createdTo().plusDays(1) + "\"");
+        }
+        if (Boolean.TRUE.equals(filter.onlyOpen())) {
+            clauses.add("statusCategory != Done");
+        } else if (Boolean.FALSE.equals(filter.onlyOpen())) {
+            clauses.add("statusCategory = Done");
+        }
+
+        String combinedWhere = String.join(" AND ", clauses);
+        if (combinedWhere.isEmpty()) {
+            return orderBy;
+        }
+        return orderBy.isEmpty() ? combinedWhere : combinedWhere + " " + orderBy;
     }
 
     @Override
-    public List<Called> fetchOpenCalleds() {
+    public List<Called> fetchOpenCalleds(CalledFilter filter) {
         List<Called> calleds = new ArrayList<>();
+        String jql = buildJql(filter);
         String pageToken = null;
 
         for (int page = 0; page < MAX_PAGES; page++) {
-            JiraSearchResponse response = fetchPageWithRetry(pageToken);
+            JiraSearchResponse response = fetchPageWithRetry(jql, pageToken);
             if (response == null || response.issues() == null) {
                 break;
             }
@@ -97,10 +144,10 @@ public class JiraCalledAdapter implements CalledProviderPort {
         }
     }
 
-    private JiraSearchResponse fetchPageWithRetry(String pageToken) {
+    private JiraSearchResponse fetchPageWithRetry(String jql, String pageToken) {
         for (int attempt = 1; attempt <= MAX_RETRIES_429; attempt++) {
             try {
-                return fetchPage(pageToken);
+                return fetchPage(jql, pageToken);
             } catch (HttpClientErrorException.TooManyRequests e) {
                 if (attempt == MAX_RETRIES_429) {
                     log.warn("Jira returned 429 (rate limit) {} times in a row; returning the tickets collected so far.", attempt);
@@ -114,11 +161,11 @@ public class JiraCalledAdapter implements CalledProviderPort {
         return null;
     }
 
-    private JiraSearchResponse fetchPage(String pageToken) {
+    private JiraSearchResponse fetchPage(String jql, String pageToken) {
         return restClient().get()
                 .uri(uriBuilder -> {
                     uriBuilder.path("/rest/api/3/search/jql")
-                            .queryParam("jql", jql())
+                            .queryParam("jql", jql)
                             .queryParam("fields", FIELDS)
                             .queryParam("maxResults", MAX_RESULTS_PER_PAGE);
                     if (pageToken != null) {

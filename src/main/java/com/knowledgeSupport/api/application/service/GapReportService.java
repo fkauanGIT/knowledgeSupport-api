@@ -5,6 +5,7 @@ import com.knowledgeSupport.api.application.port.out.CalledProviderPort;
 import com.knowledgeSupport.api.application.port.out.StandardRepositoryPort;
 import com.knowledgeSupport.api.domain.model.Called;
 import com.knowledgeSupport.api.domain.model.CalledAnalysis;
+import com.knowledgeSupport.api.domain.model.CalledFilter;
 import com.knowledgeSupport.api.domain.model.GapReport;
 import com.knowledgeSupport.api.domain.model.RoutineGap;
 import com.knowledgeSupport.api.domain.model.Standard;
@@ -42,7 +43,7 @@ public class GapReportService implements GapReportUseCase {
 
     @Override
     public GapReport generate() {
-        List<Called> calleds = calledProviderPort.fetchOpenCalleds();
+        List<Called> calleds = calledProviderPort.fetchOpenCalleds(CalledFilter.NONE);
         List<Standard> standards = standardRepositoryPort.findAll();
 
         List<Called> withoutMatch = calleds.stream()
