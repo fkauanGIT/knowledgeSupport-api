@@ -1,6 +1,7 @@
 package com.knowledgeSupport.api.adapter.in.web;
 
 import com.knowledgeSupport.api.adapter.out.jira.JiraCredentialsInvalidException;
+import com.knowledgeSupport.api.application.service.UnsupportedDocumentTypeException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,6 +25,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(JiraCredentialsInvalidException.class)
     public ResponseEntity<ErrorResponse> handleInvalidJiraCredentials(JiraCredentialsInvalidException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(Instant.now(), HttpStatus.BAD_REQUEST.value(), "Bad Request", e.getMessage()));
+    }
+
+    @ExceptionHandler(UnsupportedDocumentTypeException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedDocumentType(UnsupportedDocumentTypeException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(Instant.now(), HttpStatus.BAD_REQUEST.value(), "Bad Request", e.getMessage()));
     }
