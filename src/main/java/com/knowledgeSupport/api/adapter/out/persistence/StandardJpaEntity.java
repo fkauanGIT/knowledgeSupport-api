@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,9 @@ public class StandardJpaEntity {
 
     // No separate JPA entity/repository: a step has no identity or lifecycle outside its
     // Standard, same precedent as Requester living inside Called (see ARCHITECTURE.md).
-    @ElementCollection(fetch = FetchType.EAGER)
+    // LAZY: o matcher (caminho quente) nem usa os passos; @BatchSize evita o N+1 ao carregá-los.
+    @ElementCollection(fetch = FetchType.LAZY)
+    @BatchSize(size = 200)
     @CollectionTable(name = "standard_investigation_step", joinColumns = @JoinColumn(name = "standard_id"))
     @OrderColumn(name = "step_order")
     private List<InvestigationStepEmbeddable> investigationSteps = new ArrayList<>();
