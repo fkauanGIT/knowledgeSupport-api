@@ -7,13 +7,22 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Fonte única das credenciais do Jira em tempo de execução.
@@ -37,6 +46,10 @@ public class JiraSettingsStore {
     private final Path storePath;
     private final ObjectMapper mapper = new ObjectMapper();
     private final AtomicReference<JiraCredentials> current;
+
+    // Segredo opcional para cifrar o token em disco. Ausente => plaintext (legado/testes). Definido => AES-GCM.
+    private static final String ENC_PREFIX = "enc::";
+    private final String encryptionSecret = System.getenv("JIRA_SETTINGS_SECRET");
 
     public JiraSettingsStore(@Value("${jira.base-url:}") String baseUrl,
                              @Value("${jira.email:}") String email,
@@ -115,7 +128,8 @@ public class JiraSettingsStore {
             if (!Files.exists(storePath)) {
                 return Optional.empty();
             }
-            return Optional.of(mapper.readValue(Files.readAllBytes(storePath), JiraCredentials.class));
+            JiraCredentials stored = mapper.readValue(Files.readAllBytes(storePath), JiraCredentials.class);
+            return Optional.of(decryptToken(stored));
         } catch (IOException e) {
             log.warn("Não foi possível ler o override de credenciais do Jira em {}: {}", storePath, e.getMessage());
             return Optional.empty();
@@ -128,9 +142,73 @@ public class JiraSettingsStore {
             if (parent != null) {
                 Files.createDirectories(parent);
             }
-            Files.write(storePath, mapper.writeValueAsBytes(credentials));
+            Files.write(storePath, mapper.writeValueAsBytes(encryptToken(credentials)));
+            restrictPermissions(storePath);
         } catch (IOException e) {
             log.error("Falha ao persistir as credenciais do Jira em {}: {}", storePath, e.getMessage());
         }
+    }
+
+    // ---- Cifragem em repouso (opt-in via JIRA_SETTINGS_SECRET) e permissões do arquivo --------
+
+    private JiraCredentials encryptToken(JiraCredentials c) {
+        if (isBlank(encryptionSecret) || isBlank(c.apiToken()) || c.apiToken().startsWith(ENC_PREFIX)) {
+            return c;
+        }
+        try {
+            byte[] iv = new byte[12];
+            new SecureRandom().nextBytes(iv);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, aesKey(), new GCMParameterSpec(128, iv));
+            byte[] ct = cipher.doFinal(c.apiToken().getBytes(StandardCharsets.UTF_8));
+            byte[] out = new byte[iv.length + ct.length];
+            System.arraycopy(iv, 0, out, 0, iv.length);
+            System.arraycopy(ct, 0, out, iv.length, ct.length);
+            String wrapped = ENC_PREFIX + Base64.getEncoder().encodeToString(out);
+            return new JiraCredentials(c.baseUrl(), c.email(), wrapped, c.jql());
+        } catch (Exception e) {
+            log.error("Falha ao cifrar o token do Jira; abortando a escrita para não gravar em claro.", e);
+            throw new IllegalStateException("Falha ao cifrar o token do Jira", e);
+        }
+    }
+
+    private JiraCredentials decryptToken(JiraCredentials c) {
+        String token = c.apiToken();
+        if (token == null || !token.startsWith(ENC_PREFIX)) {
+            return c;
+        }
+        if (isBlank(encryptionSecret)) {
+            log.error("Token do Jira está cifrado em disco, mas JIRA_SETTINGS_SECRET não está definido; token indisponível.");
+            return new JiraCredentials(c.baseUrl(), c.email(), "", c.jql());
+        }
+        try {
+            byte[] all = Base64.getDecoder().decode(token.substring(ENC_PREFIX.length()));
+            byte[] iv = java.util.Arrays.copyOfRange(all, 0, 12);
+            byte[] ct = java.util.Arrays.copyOfRange(all, 12, all.length);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, aesKey(), new GCMParameterSpec(128, iv));
+            String plain = new String(cipher.doFinal(ct), StandardCharsets.UTF_8);
+            return new JiraCredentials(c.baseUrl(), c.email(), plain, c.jql());
+        } catch (Exception e) {
+            log.error("Falha ao decifrar o token do Jira (segredo trocado?); token indisponível.", e);
+            return new JiraCredentials(c.baseUrl(), c.email(), "", c.jql());
+        }
+    }
+
+    private SecretKeySpec aesKey() throws Exception {
+        byte[] key = MessageDigest.getInstance("SHA-256").digest(encryptionSecret.getBytes(StandardCharsets.UTF_8));
+        return new SecretKeySpec(key, "AES");
+    }
+
+    private static void restrictPermissions(Path path) {
+        try {
+            Files.setPosixFilePermissions(path, EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+        } catch (UnsupportedOperationException | IOException ignored) {
+            // FS sem POSIX (ex.: Windows): permissões controladas pelo SO/deploy.
+        }
+    }
+
+    private static boolean isBlank(String v) {
+        return v == null || v.isBlank();
     }
 }
