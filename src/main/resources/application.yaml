@@ -42,18 +42,17 @@ management:
         include: info,health
   info:
     git:
-      mode: full
+      mode: simple
 
 springdoc:
   swagger-ui:
+    # Desative em produção: SWAGGER_ENABLED=false
+    enabled: ${SWAGGER_ENABLED:true}
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
     display-request-duration: true
   api-docs:
+    # Desative em produção: API_DOCS_ENABLED=false
+    enabled: ${API_DOCS_ENABLED:true}
     path: /v3/api-docs
-  # In production, disable the public docs by uncommenting:
-  # api-docs:
-  #   enabled: false
-  # swagger-ui:
-  #   enabled: false
