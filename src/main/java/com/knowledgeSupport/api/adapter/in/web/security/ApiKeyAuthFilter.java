@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 
 /**
@@ -33,12 +35,23 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String providedApiKey = request.getHeader(HEADER_NAME);
 
-        if (providedApiKey != null && providedApiKey.equals(expectedApiKey)) {
+        if (providedApiKey != null && constantTimeEquals(providedApiKey, expectedApiKey)) {
             var authentication = new UsernamePasswordAuthenticationToken(
                     "api-client", null, List.of());
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Comparação em tempo constante: {@code String.equals} retorna no primeiro byte diferente,
+     * vazando o prefixo correto por timing. {@code MessageDigest.isEqual} não faz short-circuit
+     * revelador e trata tamanhos diferentes com segurança.
+     */
+    private static boolean constantTimeEquals(String provided, String expected) {
+        return MessageDigest.isEqual(
+                provided.getBytes(StandardCharsets.UTF_8),
+                expected.getBytes(StandardCharsets.UTF_8));
     }
 }
