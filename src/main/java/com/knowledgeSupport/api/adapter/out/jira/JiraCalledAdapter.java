@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -80,6 +81,11 @@ public class JiraCalledAdapter implements CalledProviderPort {
         return cachedClient;
     }
 
+    /** Chave de cache do fetchOpenCalleds: muda quando a JQL configurada muda (config em runtime). */
+    public String jqlCacheKey() {
+        return settingsStore.current().jql();
+    }
+
     /**
      * Layers the filter's clauses (created window, only-open) on top of whatever JQL is
      * already configured, instead of replacing it. Slices the configured JQL at "ORDER BY"
@@ -123,6 +129,7 @@ public class JiraCalledAdapter implements CalledProviderPort {
     }
 
     @Override
+    @Cacheable(cacheNames = "openCalleds", key = "#root.target.jqlCacheKey() + '|' + #filter")
     public List<Called> fetchOpenCalleds(CalledFilter filter) {
         return fetchTimer.record(() -> {
             List<Called> calleds = new ArrayList<>();
