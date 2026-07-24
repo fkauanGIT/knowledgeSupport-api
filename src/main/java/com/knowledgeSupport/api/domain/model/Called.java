@@ -17,6 +17,7 @@ public class Called {
     private FilterCategory filterCategory;
     private String status;
     private Requester requester;
+    private String assigneeName;
     private Date createdAt;
     private Date deadline;
     private Date updateAt;
@@ -63,6 +64,10 @@ public class Called {
         return requester;
     }
 
+    public String getAssigneeName() {
+        return assigneeName;
+    }
+
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -81,7 +86,7 @@ public class Called {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("Called{");
+        final StringBuilder sb = new StringBuilder("Called{");
         sb.append("id=").append(id);
         sb.append(", jiraKey='").append(jiraKey).append('\'');
         sb.append(", titleCalled='").append(titleCalled).append('\'');
@@ -92,6 +97,7 @@ public class Called {
         sb.append(", filterCategory=").append(filterCategory);
         sb.append(", status='").append(status).append('\'');
         sb.append(", requester=").append(requester);
+        sb.append(", assigneeName='").append(assigneeName).append('\'');
         sb.append(", createdAt=").append(createdAt);
         sb.append(", deadline=").append(deadline);
         sb.append(", updateAt=").append(updateAt);
@@ -154,6 +160,11 @@ public class Called {
 
         public Builder requester(Requester requester) {
             called.requester = requester;
+            return this;
+        }
+
+        public Builder assigneeName(String assigneeName) {
+            called.assigneeName = assigneeName;
             return this;
         }
 

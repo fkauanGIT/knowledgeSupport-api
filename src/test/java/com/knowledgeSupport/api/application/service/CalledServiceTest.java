@@ -2,6 +2,7 @@ package com.knowledgeSupport.api.application.service;
 
 import com.knowledgeSupport.api.application.port.out.CalledProviderPort;
 import com.knowledgeSupport.api.domain.model.Called;
+import com.knowledgeSupport.api.domain.model.CalledFilter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -21,10 +22,10 @@ class CalledServiceTest {
     @Test
     void listOpenCalleds_delegatesToTheProviderPort() {
         Called called = Called.builder().titleCalled("test").build();
-        when(calledProviderPort.fetchOpenCalleds()).thenReturn(List.of(called));
+        when(calledProviderPort.fetchOpenCalleds(CalledFilter.NONE)).thenReturn(List.of(called));
 
         CalledService service = new CalledService(calledProviderPort);
 
-        assertEquals(1, service.listOpenCalleds().size());
+        assertEquals(1, service.listOpenCalleds(CalledFilter.NONE).size());
     }
 }

@@ -10,12 +10,20 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 25MB
 
 jira:
   base-url: ${JIRA_BASE_URL}
   email: ${JIRA_EMAIL}
   api-token: ${JIRA_API_TOKEN}
   jql: ${JIRA_JQL:created >= -30d ORDER BY created DESC}
+  # Opcional (AAAA-MM-DD). Quando setado, loga um aviso no boot se faltarem <=30 dias
+  # para expirar (ou se já tiver expirado). O Jira não expõe essa data via API para
+  # o próprio dono do token, então precisa ser informada manualmente.
+  api-token-expires-at: ${JIRA_API_TOKEN_EXPIRES_AT:}
 
 matching:
   # Minimum text-similarity score (0-1) for a Standard to be considered a suggestion.
@@ -34,18 +42,17 @@ management:
         include: info,health
   info:
     git:
-      mode: full
+      mode: simple
 
 springdoc:
   swagger-ui:
+    # Desative em produção: SWAGGER_ENABLED=false
+    enabled: ${SWAGGER_ENABLED:true}
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
     display-request-duration: true
   api-docs:
+    # Desative em produção: API_DOCS_ENABLED=false
+    enabled: ${API_DOCS_ENABLED:true}
     path: /v3/api-docs
-  # In production, disable the public docs by uncommenting:
-  # api-docs:
-  #   enabled: false
-  # swagger-ui:
-  #   enabled: false

@@ -5,6 +5,7 @@ import com.knowledgeSupport.api.application.port.out.CalledProviderPort;
 import com.knowledgeSupport.api.application.port.out.StandardRepositoryPort;
 import com.knowledgeSupport.api.domain.model.Called;
 import com.knowledgeSupport.api.domain.model.CalledAnalysis;
+import com.knowledgeSupport.api.domain.model.CalledFilter;
 import com.knowledgeSupport.api.domain.model.GapReport;
 import com.knowledgeSupport.api.domain.model.RoutineGap;
 import com.knowledgeSupport.api.domain.model.Standard;
@@ -42,11 +43,14 @@ public class GapReportService implements GapReportUseCase {
 
     @Override
     public GapReport generate() {
-        List<Called> calleds = calledProviderPort.fetchOpenCalleds();
+        List<Called> calleds = calledProviderPort.fetchOpenCalleds(CalledFilter.NONE);
         List<Standard> standards = standardRepositoryPort.findAll();
 
+        // Tokeniza os Standards UMA vez para todos os tickets (antes: uma vez por ticket).
+        List<CalledStandardMatcher.PreparedStandard> prepared = CalledStandardMatcher.prepare(standards);
+
         List<Called> withoutMatch = calleds.stream()
-                .map(called -> matcher.match(called, standards))
+                .map(called -> matcher.matchPrepared(called, prepared))
                 .filter(analysis -> "NONE".equals(analysis.getMethod().getName()))
                 .map(CalledAnalysis::getCalled)
                 .toList();

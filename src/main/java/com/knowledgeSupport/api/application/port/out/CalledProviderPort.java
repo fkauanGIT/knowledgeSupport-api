@@ -1,6 +1,7 @@
 package com.knowledgeSupport.api.application.port.out;
 
 import com.knowledgeSupport.api.domain.model.Called;
+import com.knowledgeSupport.api.domain.model.CalledFilter;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +11,6 @@ import java.util.Optional;
  * Today JiraCalledAdapter fulfills this contract, but the core doesn't know that.
  */
 public interface CalledProviderPort {
-    List<Called> fetchOpenCalleds();
+    List<Called> fetchOpenCalleds(CalledFilter filter);
     Optional<Called> fetchByKey(String key);
 }

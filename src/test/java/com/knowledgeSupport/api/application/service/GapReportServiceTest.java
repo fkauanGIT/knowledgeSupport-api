@@ -3,6 +3,7 @@ package com.knowledgeSupport.api.application.service;
 import com.knowledgeSupport.api.application.port.out.CalledProviderPort;
 import com.knowledgeSupport.api.application.port.out.StandardRepositoryPort;
 import com.knowledgeSupport.api.domain.model.Called;
+import com.knowledgeSupport.api.domain.model.CalledFilter;
 import com.knowledgeSupport.api.domain.model.GapReport;
 import com.knowledgeSupport.api.domain.model.RoutineGap;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ class GapReportServiceTest {
 
     @Test
     void groupsByRoutineAndSortsByCountDesc() {
-        when(calledProviderPort.fetchOpenCalleds()).thenReturn(List.of(
+        when(calledProviderPort.fetchOpenCalleds(CalledFilter.NONE)).thenReturn(List.of(
                 calledFromRoutine(100, "ticket 1"),
                 calledFromRoutine(100, "ticket 2"),
                 calledFromRoutine(200, "ticket 3"),
@@ -65,7 +66,7 @@ class GapReportServiceTest {
 
     @Test
     void noOpenTickets_returnsEmptyReport() {
-        when(calledProviderPort.fetchOpenCalleds()).thenReturn(List.of());
+        when(calledProviderPort.fetchOpenCalleds(CalledFilter.NONE)).thenReturn(List.of());
 
         GapReport report = service().generate();
 
@@ -88,7 +89,7 @@ class GapReportServiceTest {
                 .result("Solution")
                 .build();
 
-        when(calledProviderPort.fetchOpenCalleds()).thenReturn(List.of(called));
+        when(calledProviderPort.fetchOpenCalleds(CalledFilter.NONE)).thenReturn(List.of(called));
         when(standardRepositoryPort.findAll()).thenReturn(List.of(standard));
 
         GapReport report = service().generate();

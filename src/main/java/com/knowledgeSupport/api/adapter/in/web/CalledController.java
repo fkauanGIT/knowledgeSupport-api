@@ -4,18 +4,24 @@ import com.knowledgeSupport.api.application.port.in.AnalyzeCalledUseCase;
 import com.knowledgeSupport.api.application.port.in.GapReportUseCase;
 import com.knowledgeSupport.api.application.port.in.ListCalledsUseCase;
 import com.knowledgeSupport.api.application.port.in.SubmitFeedbackUseCase;
+import com.knowledgeSupport.api.domain.model.CalledFilter;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -41,11 +47,28 @@ public class CalledController {
     }
 
     @GetMapping
-    @Operation(summary = "Lists open tickets",
-            description = "Queries the Jira API (project SUP) in real time and returns the tickets already translated to the domain format — no cache and no local persistence: Jira is the source of truth.")
-    @ApiResponse(responseCode = "200", description = "List of open tickets (may be empty)")
-    public List<CalledResponse> listOpen() {
-        return listCalledsUseCase.listOpenCalleds().stream()
+    @Operation(summary = "Lists tickets, optionally filtered",
+            description = "Queries the Jira API (project SUP) in real time and returns the tickets already "
+                    + "translated to the domain format — no cache and no local persistence: Jira is the source "
+                    + "of truth. With no query params, returns everything the configured JQL (JIRA_JQL / "
+                    + "PUT /api/settings/jira) already returns. The params below only narrow that down; they "
+                    + "don't replace the base filter — handy for monitoring/dashboards over a specific slice.")
+    @ApiResponse(responseCode = "200", description = "List of tickets (may be empty)")
+    public List<CalledResponse> listOpen(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            @Parameter(description = "Only tickets created on/after this date", example = "2026-01-01")
+            LocalDate createdFrom,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            @Parameter(description = "Only tickets created on/before this date (inclusive)", example = "2026-07-31")
+            LocalDate createdTo,
+            @RequestParam(required = false)
+            @Parameter(description = "true = only tickets not in a Done-like status; "
+                    + "false = only Done-like; omitted = no status filter")
+            Boolean onlyOpen) {
+        CalledFilter filter = new CalledFilter(createdFrom, createdTo, onlyOpen);
+        return listCalledsUseCase.listOpenCalleds(filter).stream()
                 .map(CalledResponse::from)
                 .toList();
     }
@@ -71,7 +94,7 @@ public class CalledController {
     @Operation(summary = "Records whether the analysis's suggestion solved the ticket",
             description = "Feeds the Standard's accuracy rate (GET /api/standards/{id}/accuracy) with a real outcome, not a guess.")
     @ApiResponse(responseCode = "201", description = "Feedback recorded")
-    public FeedbackResponse submitFeedback(@PathVariable String key, @RequestBody FeedbackRequest request) {
+    public FeedbackResponse submitFeedback(@PathVariable String key, @Valid @RequestBody FeedbackRequest request) {
         return FeedbackResponse.from(submitFeedbackUseCase.submit(key, request.standardId(), request.resolved()));
     }
 }

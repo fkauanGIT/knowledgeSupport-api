@@ -50,7 +50,7 @@ public class Standard {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("Standard{");
+        final StringBuilder sb = new StringBuilder("Standard{");
         sb.append("id=").append(id);
         sb.append(", standardName='").append(standardName).append('\'');
         sb.append(", text='").append(text).append('\'');

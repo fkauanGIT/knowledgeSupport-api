@@ -55,6 +55,7 @@ class JiraCalledMapperTest {
                 new JiraStatus("Aguardando cliente"),
                 new JiraIssueType("Incidente ou Interrupções"),
                 new JiraReporter("Fulano", "fulano@teste.com"),
+                new JiraReporter("Ciclano", "ciclano@teste.com"),
                 "2026-07-11T14:55:32.988+0000",
                 "2026-07-20",
                 "2026-07-13T18:02:55.565+0000",
@@ -72,17 +73,19 @@ class JiraCalledMapperTest {
         assertEquals(IncidentType.ERROR, called.getIncidentType());
         assertEquals("Aguardando cliente", called.getStatus());
         assertEquals("Fulano", called.getRequester().getRequesterName());
+        assertEquals("Ciclano", called.getAssigneeName());
     }
 
     @Test
     void toDomain_withNoReporterNorErrorName_doesNotBreak() {
         JiraIssuePayload issue = new JiraIssuePayload("SUP-2", new JiraFields(
-                "titulo", null, null, null, null, null, null, null, null, null
+                "titulo", null, null, null, null, null, null, null, null, null, null
         ));
 
         Called called = JiraCalledMapper.toDomain(issue);
 
         assertNull(called.getRequester());
+        assertNull(called.getAssigneeName());
         assertNull(called.getErrorName());
         assertNull(called.getRoutineNumber());
         assertEquals(IncidentType.ERROR, called.getIncidentType());

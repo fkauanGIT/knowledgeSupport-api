@@ -3,6 +3,7 @@ package com.knowledgeSupport.api.application.service;
 import com.knowledgeSupport.api.application.port.in.ListCalledsUseCase;
 import com.knowledgeSupport.api.application.port.out.CalledProviderPort;
 import com.knowledgeSupport.api.domain.model.Called;
+import com.knowledgeSupport.api.domain.model.CalledFilter;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class CalledService implements ListCalledsUseCase {
     }
 
     @Override
-    public List<Called> listOpenCalleds() {
-        return calledProviderPort.fetchOpenCalleds();
+    public List<Called> listOpenCalleds(CalledFilter filter) {
+        return calledProviderPort.fetchOpenCalleds(filter);
     }
 }

@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,7 +59,7 @@ public class StandardController {
     @Operation(summary = "Registers a pattern",
             description = "Registers a new known error and its solution in the knowledge base.")
     @ApiResponse(responseCode = "201", description = "Pattern created, returned with the generated id")
-    public StandardResponse create(@RequestBody StandardRequest request) {
+    public StandardResponse create(@Valid @RequestBody StandardRequest request) {
         Standard created = createStandardUseCase.create(toDomain(request));
         return StandardResponse.from(created);
     }
@@ -89,7 +90,7 @@ public class StandardController {
             @ApiResponse(responseCode = "200", description = "Pattern updated"),
             @ApiResponse(responseCode = "404", description = "No pattern with that id")
     })
-    public StandardResponse update(@PathVariable UUID id, @RequestBody StandardRequest request) {
+    public StandardResponse update(@PathVariable UUID id, @Valid @RequestBody StandardRequest request) {
         Standard updated = updateStandardUseCase.update(id, toDomain(request));
         return StandardResponse.from(updated);
     }
