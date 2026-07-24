@@ -1,6 +1,8 @@
 package com.knowledgeSupport.api.adapter.out.persistence;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -9,6 +11,8 @@ import java.util.Date;
 import java.util.UUID;
 
 @Entity
+// Índice em standard_id: findByStandardId (accuracy) faria full scan conforme feedbacks crescem.
+@Table(indexes = @Index(name = "idx_feedback_standard_id", columnList = "standard_id"))
 public class FeedbackJpaEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
