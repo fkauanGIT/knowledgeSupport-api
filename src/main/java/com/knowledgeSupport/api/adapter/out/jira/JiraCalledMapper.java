@@ -5,9 +5,13 @@ import com.knowledgeSupport.api.domain.model.Requester;
 import com.knowledgeSupport.api.domain.model.enums.FilterCategory;
 import com.knowledgeSupport.api.domain.model.enums.IncidentType;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
@@ -18,8 +22,10 @@ import java.util.regex.Pattern;
  */
 public final class JiraCalledMapper {
 
-    private static final String JIRA_DATETIME = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
-    private static final String JIRA_DATE = "yyyy-MM-dd";
+    // DateTimeFormatter é imutável/thread-safe e reutilizável — SimpleDateFormat era instanciado
+    // por campo, por issue (3x N objetos numa listagem grande) e não é thread-safe.
+    private static final DateTimeFormatter JIRA_DATETIME =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.ROOT);
 
     // Rejection responses (e.g. SEFAZ) come with a log timestamp glued to the front
     // ("11/07/2026 11:29:52 - Sefaz response: 866 - ..."). That's integration noise,
@@ -34,7 +40,6 @@ public final class JiraCalledMapper {
 
         Requester requester = fields.reporter() == null ? null : new Requester(
                 fields.reporter().displayName(),
-                null, // Jira doesn't know the branch; decide later where it should come from
                 fields.reporter().emailAddress()
         );
 
@@ -53,9 +58,9 @@ public final class JiraCalledMapper {
                 .status(fields.status() == null ? null : fields.status().name())
                 .requester(requester)
                 .assigneeName(fields.assignee() == null ? null : fields.assignee().displayName())
-                .createdAt(parse(fields.created(), JIRA_DATETIME))
-                .deadline(parse(fields.duedate(), JIRA_DATE))
-                .updateAt(parse(fields.updated(), JIRA_DATETIME))
+                .createdAt(parseDateTime(fields.created()))
+                .deadline(parseDate(fields.duedate()))
+                .updateAt(parseDateTime(fields.updated()))
                 .routineNumber(fields.routineNumber() == null ? null : fields.routineNumber().intValue()) // customfield_10432
                 .build();
     }
@@ -96,11 +101,20 @@ public final class JiraCalledMapper {
         }
     }
 
-    private static Date parse(String value, String pattern) {
+    private static Date parseDateTime(String value) {
         if (value == null || value.isBlank()) return null;
         try {
-            return new SimpleDateFormat(pattern).parse(value);
-        } catch (ParseException e) {
+            return Date.from(OffsetDateTime.parse(value, JIRA_DATETIME).toInstant());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private static Date parseDate(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Date.from(LocalDate.parse(value).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        } catch (DateTimeParseException e) {
             return null;
         }
     }

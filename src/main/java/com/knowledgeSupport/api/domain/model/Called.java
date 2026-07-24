@@ -86,7 +86,7 @@ public class Called {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("Called{");
+        final StringBuilder sb = new StringBuilder("Called{");
         sb.append("id=").append(id);
         sb.append(", jiraKey='").append(jiraKey).append('\'');
         sb.append(", titleCalled='").append(titleCalled).append('\'');
