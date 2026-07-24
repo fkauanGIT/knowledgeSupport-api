@@ -3,15 +3,20 @@ package com.knowledgeSupport.api.adapter.out.jira;
 import com.knowledgeSupport.api.application.port.out.CalledProviderPort;
 import com.knowledgeSupport.api.domain.model.Called;
 import com.knowledgeSupport.api.domain.model.CalledFilter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,14 +36,24 @@ public class JiraCalledAdapter implements CalledProviderPort {
     private static final int MAX_RETRIES_429 = 3;
     private static final Pattern ORDER_BY = Pattern.compile("(?i)\\border\\s+by\\b");
 
+    // Um Jira pendurado NÃO pode segurar a thread do Tomcat para sempre: sem timeout, uma conexão
+    // travada esgota o pool sob carga. 2s para conectar, 8s para ler.
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(2);
+    private static final Duration READ_TIMEOUT = Duration.ofSeconds(8);
+
     private final JiraSettingsStore settingsStore;
+    private final Timer fetchTimer;
 
     // Cache do RestClient: reconstruído só quando as credenciais mudam (hot-swap do token).
     private volatile JiraCredentials cachedCredentials;
     private volatile RestClient cachedClient;
 
-    public JiraCalledAdapter(JiraSettingsStore settingsStore) {
+    public JiraCalledAdapter(JiraSettingsStore settingsStore, MeterRegistry meterRegistry) {
         this.settingsStore = settingsStore;
+        this.fetchTimer = Timer.builder("jira.fetch")
+                .description("Latência das chamadas à API do Jira")
+                .publishPercentiles(0.5, 0.95, 0.99)
+                .register(meterRegistry);
     }
 
     /**
@@ -50,7 +65,11 @@ public class JiraCalledAdapter implements CalledProviderPort {
         if (cachedClient == null || !credentials.equals(cachedCredentials)) {
             synchronized (this) {
                 if (cachedClient == null || !credentials.equals(cachedCredentials)) {
+                    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+                    factory.setConnectTimeout(CONNECT_TIMEOUT);
+                    factory.setReadTimeout(READ_TIMEOUT);
                     cachedClient = RestClient.builder()
+                            .requestFactory(factory)
                             .baseUrl(credentials.baseUrl())
                             .defaultHeaders(headers -> headers.setBasicAuth(credentials.email(), credentials.apiToken()))
                             .build();
@@ -63,10 +82,8 @@ public class JiraCalledAdapter implements CalledProviderPort {
 
     /**
      * Layers the filter's clauses (created window, only-open) on top of whatever JQL is
-     * already configured, instead of replacing it — so "no filter" keeps returning exactly
-     * what the configured JQL returns today (full history), and a filter only narrows it.
-     * Has to slice the configured JQL at "ORDER BY" first, since new AND-clauses can't be
-     * appended after an ORDER BY without breaking the query.
+     * already configured, instead of replacing it. Slices the configured JQL at "ORDER BY"
+     * first, since new AND-clauses can't be appended after an ORDER BY.
      */
     private String buildJql(CalledFilter filter) {
         String base = settingsStore.current().jql();
@@ -90,8 +107,6 @@ public class JiraCalledAdapter implements CalledProviderPort {
             clauses.add("created >= \"" + filter.createdFrom() + "\"");
         }
         if (filter.createdTo() != null) {
-            // <= a data informada não bastaria: em Jira "created <= 2026-01-10" corta às
-            // 00:00 daquele dia. Usar "<" com o dia seguinte inclui o dia inteiro.
             clauses.add("created < \"" + filter.createdTo().plusDays(1) + "\"");
         }
         if (Boolean.TRUE.equals(filter.onlyOpen())) {
@@ -109,52 +124,61 @@ public class JiraCalledAdapter implements CalledProviderPort {
 
     @Override
     public List<Called> fetchOpenCalleds(CalledFilter filter) {
-        List<Called> calleds = new ArrayList<>();
-        String jql = buildJql(filter);
-        String pageToken = null;
+        return fetchTimer.record(() -> {
+            List<Called> calleds = new ArrayList<>();
+            String jql = buildJql(filter);
+            String pageToken = null;
 
-        for (int page = 0; page < MAX_PAGES; page++) {
-            JiraSearchResponse response = fetchPageWithRetry(jql, pageToken);
-            if (response == null || response.issues() == null) {
-                break;
+            for (int page = 0; page < MAX_PAGES; page++) {
+                String token = pageToken;
+                JiraSearchResponse response = withRetry(() -> fetchPage(jql, token));
+                if (response == null || response.issues() == null) {
+                    break;
+                }
+
+                response.issues().stream().map(JiraCalledMapper::toDomain).forEach(calleds::add);
+
+                pageToken = response.nextPageToken();
+                if (pageToken == null || response.issues().size() < MAX_RESULTS_PER_PAGE) {
+                    break;
+                }
             }
 
-            response.issues().stream().map(JiraCalledMapper::toDomain).forEach(calleds::add);
-
-            pageToken = response.nextPageToken();
-            if (pageToken == null || response.issues().size() < MAX_RESULTS_PER_PAGE) {
-                break;
-            }
-        }
-
-        return calleds;
+            return calleds;
+        });
     }
 
     @Override
     public Optional<Called> fetchByKey(String key) {
-        try {
-            JiraIssuePayload issue = restClient().get()
-                    .uri("/rest/api/3/issue/{key}?fields=" + FIELDS, key)
-                    .retrieve()
-                    .body(JiraIssuePayload.class);
+        return fetchTimer.record(() -> {
+            try {
+                JiraIssuePayload issue = withRetry(() -> restClient().get()
+                        .uri("/rest/api/3/issue/{key}?fields=" + FIELDS, key)
+                        .retrieve()
+                        .body(JiraIssuePayload.class));
 
-            return Optional.ofNullable(issue).map(JiraCalledMapper::toDomain);
-        } catch (HttpClientErrorException.NotFound e) {
-            return Optional.empty();
-        }
+                return Optional.ofNullable(issue).map(JiraCalledMapper::toDomain);
+            } catch (HttpClientErrorException.NotFound e) {
+                return Optional.empty();
+            }
+        });
     }
 
-    private JiraSearchResponse fetchPageWithRetry(String jql, String pageToken) {
+    /**
+     * Política única de resiliência: repete em 429 com backoff (respeitando Retry-After).
+     * Antes só a listagem tinha retry; o fetchByKey (caminho quente por ticket) estourava 429 cru.
+     */
+    private <T> T withRetry(Supplier<T> call) {
         for (int attempt = 1; attempt <= MAX_RETRIES_429; attempt++) {
             try {
-                return fetchPage(jql, pageToken);
+                return call.get();
             } catch (HttpClientErrorException.TooManyRequests e) {
                 if (attempt == MAX_RETRIES_429) {
-                    log.warn("Jira returned 429 (rate limit) {} times in a row; returning the tickets collected so far.", attempt);
+                    log.warn("Jira retornou 429 (rate limit) {} vezes seguidas; desistindo desta chamada.", attempt);
                     return null;
                 }
                 long waitMillis = retryAfterMillis(e).orElse(1000L * attempt);
-                log.warn("Jira returned 429 (rate limit), attempt {}/{}; waiting {}ms.", attempt, MAX_RETRIES_429, waitMillis);
+                log.warn("Jira retornou 429 (rate limit), tentativa {}/{}; aguardando {}ms.", attempt, MAX_RETRIES_429, waitMillis);
                 sleep(waitMillis);
             }
         }
