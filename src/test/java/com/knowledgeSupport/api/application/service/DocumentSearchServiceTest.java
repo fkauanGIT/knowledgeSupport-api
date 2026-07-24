@@ -30,18 +30,25 @@ class DocumentSearchServiceTest {
     @Mock
     private CalledProviderPort calledProviderPort;
 
+    @Mock
+    private DocumentCorpusIndex corpusIndex;
+
     private DocumentSearchService service() {
-        return new DocumentSearchService(documentRepository, calledProviderPort);
+        return new DocumentSearchService(documentRepository, calledProviderPort, corpusIndex);
+    }
+
+    private static DocumentCorpusIndex.TokenizedChunk tokenized(DocumentChunk chunk) {
+        return new DocumentCorpusIndex.TokenizedChunk(chunk, TextTokenizer.tokenize(chunk.text()));
     }
 
     @Test
     void search_ranksChunksByRelevanceAndCapsAtThree() {
         UUID docId = UUID.randomUUID();
-        when(documentRepository.findAllChunks()).thenReturn(List.of(
-                new DocumentChunk(docId, "manual", 1, "erro sefaz 866 ausencia de troco", 0),
-                new DocumentChunk(docId, "manual", 2, "nota fiscal pendente de autorizacao", 1),
-                new DocumentChunk(docId, "manual", 3, "sefaz rejeicao 866", 2),
-                new DocumentChunk(docId, "manual", 4, "pedido de compra cancelado", 3)
+        when(corpusIndex.tokenizedChunks()).thenReturn(List.of(
+                tokenized(new DocumentChunk(docId, "manual", 1, "erro sefaz 866 ausencia de troco", 0)),
+                tokenized(new DocumentChunk(docId, "manual", 2, "nota fiscal pendente de autorizacao", 1)),
+                tokenized(new DocumentChunk(docId, "manual", 3, "sefaz rejeicao 866", 2)),
+                tokenized(new DocumentChunk(docId, "manual", 4, "pedido de compra cancelado", 3))
         ));
 
         List<ChunkMatch> matches = service().search("rejeicao 866 sefaz");
@@ -54,7 +61,7 @@ class DocumentSearchServiceTest {
 
     @Test
     void search_withNoIndexedChunks_returnsEmptyList() {
-        when(documentRepository.findAllChunks()).thenReturn(List.of());
+        when(corpusIndex.tokenizedChunks()).thenReturn(List.of());
 
         assertEquals(List.of(), service().search("qualquer coisa"));
     }

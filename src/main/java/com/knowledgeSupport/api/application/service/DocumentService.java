@@ -12,6 +12,7 @@ import com.knowledgeSupport.api.domain.model.DocumentChunk;
 import com.knowledgeSupport.api.domain.model.IndexedDocument;
 import com.knowledgeSupport.api.domain.model.enums.DocumentStatus;
 import com.knowledgeSupport.api.domain.model.enums.DocumentType;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -39,6 +40,7 @@ public class DocumentService implements UploadDocumentUseCase, ListDocumentsUseC
     }
 
     @Override
+    @CacheEvict(value = "documentCorpus", allEntries = true)
     public IndexedDocument upload(String filename, byte[] content) {
         DocumentType type = resolveType(filename);
         UUID id = UUID.randomUUID();
@@ -76,6 +78,7 @@ public class DocumentService implements UploadDocumentUseCase, ListDocumentsUseC
     }
 
     @Override
+    @CacheEvict(value = "documentCorpus", allEntries = true)
     public void deleteById(UUID id) {
         requireExists(id);
         repository.deleteById(id);

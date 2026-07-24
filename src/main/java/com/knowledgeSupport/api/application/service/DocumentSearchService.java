@@ -23,6 +23,9 @@ import java.util.stream.IntStream;
  * text: {@link #search} ranks chunks (across every document) against a free-text query;
  * {@link #relatedCalleds} flips it — ranks open Jira tickets against ONE document's full
  * text, to answer "which tickets does this manual probably resolve".
+ *
+ * <p>O corpus de chunks vem tokenizado e cacheado de {@link DocumentCorpusIndex}, para não
+ * re-varrer/re-tokenizar toda a base a cada busca.</p>
  */
 @Service
 public class DocumentSearchService implements SearchChunksUseCase, RelatedCalledsUseCase {
@@ -31,27 +34,31 @@ public class DocumentSearchService implements SearchChunksUseCase, RelatedCalled
 
     private final DocumentRepositoryPort documentRepository;
     private final CalledProviderPort calledProviderPort;
+    private final DocumentCorpusIndex corpusIndex;
 
-    public DocumentSearchService(DocumentRepositoryPort documentRepository, CalledProviderPort calledProviderPort) {
+    public DocumentSearchService(DocumentRepositoryPort documentRepository,
+                                 CalledProviderPort calledProviderPort,
+                                 DocumentCorpusIndex corpusIndex) {
         this.documentRepository = documentRepository;
         this.calledProviderPort = calledProviderPort;
+        this.corpusIndex = corpusIndex;
     }
 
     @Override
     public List<ChunkMatch> search(String query) {
-        List<DocumentChunk> chunks = documentRepository.findAllChunks();
-        if (chunks.isEmpty()) {
+        List<DocumentCorpusIndex.TokenizedChunk> corpus = corpusIndex.tokenizedChunks();
+        if (corpus.isEmpty()) {
             return List.of();
         }
 
         List<String> queryTokens = TextTokenizer.tokenize(query);
-        List<List<String>> corpus = chunks.stream().map(c -> TextTokenizer.tokenize(c.text())).toList();
-        double[] scores = TfIdfSearch.score(corpus, queryTokens);
+        List<List<String>> corpusTokens = corpus.stream().map(DocumentCorpusIndex.TokenizedChunk::tokens).toList();
+        double[] scores = TfIdfSearch.score(corpusTokens, queryTokens);
         int[] relevances = TfIdfSearch.toRelevancePercentages(scores);
 
         return rankedIndices(scores)
                 .limit(SEARCH_MAX_RESULTS)
-                .mapToObj(i -> toChunkMatch(chunks.get(i), relevances[i]))
+                .mapToObj(i -> toChunkMatch(corpus.get(i).chunk(), relevances[i]))
                 .toList();
     }
 
