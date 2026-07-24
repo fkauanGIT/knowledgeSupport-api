@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.2.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v1.1.0...v1.2.0) (2026-07-24)
+
+
+### Features
+
+* **cache:** add Caffeine-backed read-through cache for open calleds and standards ([ab11049](https://github.com/fkauanGIT/knowledgeSupport-api/commit/ab110499908e0c6093b60e0adb68f634bf9fe815))
+* **calleds:** add optional date-range and open/closed filters to GET /api/calleds ([e91aa5c](https://github.com/fkauanGIT/knowledgeSupport-api/commit/e91aa5c1985e7cf09e8f30f8ebe2182049aeb7c9))
+* **calleds:** expose the ticket's Jira assignee in CalledResponse ([e57d47f](https://github.com/fkauanGIT/knowledgeSupport-api/commit/e57d47fbd3d098445a4c42052db2fc50f93c3a4b))
+* **documentacao:** index PDF/DOCX manuals and search them with TF-IDF ([afb5082](https://github.com/fkauanGIT/knowledgeSupport-api/commit/afb5082f6a6c3851636d31911f6d1a44020757ea))
+* **jira:** add timeouts, unified 429 retry and a latency metric to JiraCalledAdapter ([8e3866a](https://github.com/fkauanGIT/knowledgeSupport-api/commit/8e3866af818a8fa56f11011dbb9d8c9c440935ac))
+* **jira:** validate settings before persisting, warn when the token nears expiry ([53a8244](https://github.com/fkauanGIT/knowledgeSupport-api/commit/53a8244354823a5a20b85967125082ab898fd9da))
+* **validation:** add Bean Validation to request bodies, broaden GlobalExceptionHandler ([a146c5f](https://github.com/fkauanGIT/knowledgeSupport-api/commit/a146c5f5be75f781d324b8d810d67e3dd40ffd17))
+
+
+### Bug Fixes
+
+* **db:** document prepareThreshold=0 for Supabase's transaction-pooler port ([a20c0ea](https://github.com/fkauanGIT/knowledgeSupport-api/commit/a20c0eaea3fe6e5f65ed36227f85bbb5fa9d84f0))
+
+
+### Performance Improvements
+
+* **db:** index feedback.standard_id to speed up accuracy lookups ([91791d4](https://github.com/fkauanGIT/knowledgeSupport-api/commit/91791d4bf70d330766347433b1b57fd73beb3e96))
+* **db:** make Standard.investigationSteps LAZY with @BatchSize ([cc267fe](https://github.com/fkauanGIT/knowledgeSupport-api/commit/cc267fedbe7dbb24957e91c726f9639b9cf33322))
+* **documents:** cache the tokenized TF-IDF corpus instead of rebuilding it per search ([d9c9c40](https://github.com/fkauanGIT/knowledgeSupport-api/commit/d9c9c409ccad56e8d19460917459f655db561786))
+* **matching:** tokenize each Standard once instead of per ticket ([09a1733](https://github.com/fkauanGIT/knowledgeSupport-api/commit/09a1733d5a6b383b5be663585623ffc24c180c1c))
+
 ## [1.1.0](https://github.com/fkauanGIT/knowledgeSupport-api/compare/v1.0.0...v1.1.0) (2026-07-17)
 
 
