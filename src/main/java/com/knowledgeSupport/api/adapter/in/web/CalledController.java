@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -93,7 +94,7 @@ public class CalledController {
     @Operation(summary = "Records whether the analysis's suggestion solved the ticket",
             description = "Feeds the Standard's accuracy rate (GET /api/standards/{id}/accuracy) with a real outcome, not a guess.")
     @ApiResponse(responseCode = "201", description = "Feedback recorded")
-    public FeedbackResponse submitFeedback(@PathVariable String key, @RequestBody FeedbackRequest request) {
+    public FeedbackResponse submitFeedback(@PathVariable String key, @Valid @RequestBody FeedbackRequest request) {
         return FeedbackResponse.from(submitFeedbackUseCase.submit(key, request.standardId(), request.resolved()));
     }
 }

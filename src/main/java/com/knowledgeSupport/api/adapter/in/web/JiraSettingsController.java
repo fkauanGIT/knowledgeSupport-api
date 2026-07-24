@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -49,7 +50,7 @@ public class JiraSettingsController {
                     + "requisição falha com 400 e nada é salvo. O override é persistido e sobrevive a reinícios.")
     @ApiResponse(responseCode = "200", description = "Config atualizada")
     @ApiResponse(responseCode = "400", description = "Jira rejeitou a config informada — nada foi salvo")
-    public JiraSettingsResponse update(@RequestBody JiraSettingsRequest request) {
+    public JiraSettingsResponse update(@Valid @RequestBody JiraSettingsRequest request) {
         JiraCredentials candidate = settingsStore.merge(
                 request.baseUrl(), request.email(), request.apiToken(), request.jql());
         validator.validate(candidate);
